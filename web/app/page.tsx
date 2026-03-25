@@ -1,14 +1,25 @@
-import Header from "./header/page";
 import UpcomingExams from "./_components/UpcomingExams";
 import RecentResults from "./_components/RecentResults";
+import Header from "./_components/Header";
+import { MyCourses } from "./_components/MyCourses";
 
 const Page = () => {
   return (
-    <div className="w-screen h-screen mx-auto">
+    <div className="min-h-screen w-full bg-background">
       <Header />
-      <UpcomingExams />
-      <RecentResults />
+
+      <div className="mx-14 mt-8 grid grid-cols-12 gap-10 items-start">
+        <div className="col-span-3">
+          <MyCourses />
+        </div>
+
+        <div className="col-span-9 space-y-10">
+          <UpcomingExams />
+          <RecentResults />
+        </div>
+      </div>
     </div>
   );
 };
+
 export default Page;

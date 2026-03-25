@@ -1,76 +1,83 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Calendar, Clock, ArrowRight, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-
+import Link from "next/link";
+import { Calendar, Clock, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const exams = [
   {
     id: 1,
-    subject: "Computer Science",
-    title: "Midterm Exam",
-    date: "2026-03-26",
+    subject: "Компьютерийн ухаан",
+    title: "Явцын шалгалт",
+    date: "2026.03.26",
     time: "10:00",
     hasInProgress: true,
   },
   {
     id: 2,
-    subject: "Mathematics",
-    title: "Algebra Quiz",
-    date: "2026-03-28",
+    subject: "Математик",
+    title: "Алгебрын сорил",
+    date: "2026.03.28",
     time: "14:00",
     hasInProgress: false,
   },
-]
+];
 
 export default function UpcomingExams() {
   return (
     <div>
-      <h2 className="mb-4 text-base font-semibold text-gray-900">
-        Upcoming Exams
+      <h2 className="mb-4 text-base font-semibold text-foreground">
+        Өгөх шалгалтууд
       </h2>
 
       <div className="grid grid-cols-2 gap-6">
         {exams.map((exam) => (
           <div
             key={exam.id}
-            className="flex justify-between items-center rounded-2xl border border-gray-200 bg-gray-50 px-6 py-5 shadow-sm"
+            className="h-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-3"
           >
-            {/* LEFT */}
-            <div>
-              <p className="text-sm font-medium text-indigo-600 mb-1">
-                {exam.subject}
-              </p>
+            <div className="flex h-full min-h-30 w-full flex-col justify-between gap-4">
+              <div>
+                <p className="text-[12px] font-medium text-indigo-500">
+                  {exam.subject}
+                </p>
 
-              <h3 className="text-xl font-semibold text-gray-900">
-                {exam.title}
-              </h3>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {exam.title}
+                </h3>
+              </div>
 
-              <div className="flex items-center gap-6 mt-4 text-gray-500 text-sm">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  <span>{exam.date}</span>
+              <div className="flex w-full items-center justify-between gap-4">
+                <div className="flex items-center gap-3 text-gray-500 text-xs">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    <span>{exam.date}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{exam.time}</span>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span>{exam.time}</span>
-                </div>
+                {exam.hasInProgress ? (
+                  <Link href={"./exam"}>
+                    <Button className="hover:cursor-pointer flex items-center gap-2">
+                      Шалгалт өгөх <ChevronRight className="w-3 h-3" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <div aria-hidden="true" className="invisible">
+                    <Button className="flex items-center">
+                      Шалгалт өгөх <ChevronRight className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* RIGHT */}
-            {exam.hasInProgress && (
-              <Link href={"./exam"}>
-        <Button className="hover:cursor-pointer">
-          Continue to Exam <ChevronRight />
-        </Button>
-      </Link>
-            )}
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }
