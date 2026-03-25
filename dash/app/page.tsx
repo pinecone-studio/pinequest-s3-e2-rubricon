@@ -7,7 +7,7 @@ const Page = () => {
   console.log({ userId });
   return (
     <div>
-      <Button>checking</Button>
+      <Button>Dash deployed</Button>
     </div>
   );
 };
