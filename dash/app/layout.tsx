@@ -3,12 +3,12 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import {
   ClerkProvider,
-  Show,
-  SignInButton,
-  SignUpButton,
-  UserButton,
+  // Show,
+  // SignInButton,
+  // SignUpButton,
+  // UserButton,
 } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
@@ -34,7 +34,7 @@ export default function RootLayout({
       >
         <body className="min-h-full flex flex-col">
           <main>
-            <header className="flex justify-end items-center p-4 gap-4 h-16 bg-blue-50">
+            {/* <header className="flex justify-end items-center p-4 gap-4 h-16 bg-blue-50">
               <Show when="signed-out">
                 <SignInButton />
                 <SignUpButton>
@@ -44,7 +44,7 @@ export default function RootLayout({
               <Show when="signed-in">
                 <UserButton />
               </Show>
-            </header>
+            </header> */}
             {children}
           </main>
           <Toaster position="top-center" />

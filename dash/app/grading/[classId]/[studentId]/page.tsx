@@ -124,7 +124,7 @@ const GradeStudentPage = () => {
           />
         </div>
 
-        {/* <GradingSidebar
+        <GradingSidebar
           mcScore={student.mcScore}
           mcTotal={student.mcTotal}
           currentEssay={currentEssay}
@@ -135,7 +135,7 @@ const GradeStudentPage = () => {
           onSubmit={handleSubmit}
           onPrevStudent={() => navigateStudent("prev")}
           onNextStudent={() => navigateStudent("next")}
-        /> */}
+        />
       </div>
     </div>
   );
