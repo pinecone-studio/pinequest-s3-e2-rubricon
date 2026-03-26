@@ -3,11 +3,13 @@ export const studentTypeDefs = `#graphql
     id: String
     name: String
     email: String
+    created_at: String
   }
 
   extend type Query {
     students: [Student]
     student(id: String!): Student
+    studentByEmail(email: String!): Student
   }
 
   extend type Mutation {

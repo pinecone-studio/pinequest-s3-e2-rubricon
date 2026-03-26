@@ -1,26 +1,26 @@
 import { supabase } from "@/lib/supabase";
 
-export const studentQueries = {
-  students: async () => {
-    const { data, error } = await supabase.from("students").select("*");
+export const courseQueries = {
+  courses: async () => {
+    const { data, error } = await supabase.from("courses").select("*");
     if (error) throw new Error(error.message);
     return data;
   },
-  student: async (_: unknown, args: { id: string }) => {
+  course: async (_: unknown, args: { id: string }) => {
     const { data, error } = await supabase
-      .from("students")
+      .from("courses")
       .select("*")
       .eq("id", args.id)
       .single();
     if (error) throw new Error(error.message);
     return data;
   },
-  studentByEmail: async (_: unknown, args: { email: string }) => {
+  courseByCode: async (_: unknown, args: { code: string }) => {
     const { data, error } = await supabase
-      .from("students")
+      .from("courses")
       .select("*")
-      .eq("email", args.email)
-      .maybeSingle();
+      .eq("code", args.code)
+      .single();
 
     if (error) throw new Error(error.message);
     return data;

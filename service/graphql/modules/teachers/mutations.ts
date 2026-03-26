@@ -1,9 +1,9 @@
 import { supabase } from "@/lib/supabase";
 
-export const studentMutations = {
-  createStudent: async (_: unknown, args: { name: string; email: string }) => {
+export const teacherMutations = {
+  createTeacher: async (_: unknown, args: { name: string; email: string }) => {
     const { data, error } = await supabase
-      .from("students")
+      .from("teacher")
       .insert([{ name: args.name, email: args.email }])
       .select()
       .single();
