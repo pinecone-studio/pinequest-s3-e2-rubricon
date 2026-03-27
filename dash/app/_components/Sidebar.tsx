@@ -12,12 +12,58 @@ import {
 } from "lucide-react";
 import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const SidebarSkeleton = () => {
+  return (
+    <aside className="flex h-screen w-68 shrink-0 flex-col border-r border-gray-200 bg-white p-4">
+      <div className="mb-3 flex items-center gap-3 py-1">
+        <Skeleton className="h-7 w-7 rounded-[10px] bg-slate-200" />
+        <Skeleton className="h-[18px] w-11 rounded-sm bg-slate-200" />
+      </div>
+      <div className="border-t border-gray-200 pt-1" />
+
+      <div className="flex-1 space-y-1 pt-4 text-sm">
+        <div className="flex items-center gap-3 rounded-[10px] px-4 py-2">
+          <Skeleton className="h-[17px] w-[17px] rounded-sm bg-slate-200" />
+          <Skeleton className="h-[14px] w-9 rounded-sm bg-slate-200" />
+        </div>
+        <div className="flex items-center gap-3 rounded-[10px] px-4 py-2">
+          <Skeleton className="h-[18px] w-[18px] rounded-sm bg-slate-200" />
+          <Skeleton className="h-[14px] w-14 rounded-sm bg-slate-200" />
+        </div>
+        <div className="flex items-center gap-3 rounded-[10px] px-4 py-2">
+          <Skeleton className="h-[18px] w-[18px] rounded-sm bg-slate-200" />
+          <Skeleton className="h-[14px] w-14 rounded-sm bg-slate-200" />
+        </div>
+        <div className="flex items-center gap-3 rounded-[10px] px-4 py-2">
+          <Skeleton className="h-[18px] w-[18px] rounded-sm bg-slate-200" />
+          <Skeleton className="h-[14px] w-12 rounded-sm bg-slate-200" />
+        </div>
+        <div className="flex items-center gap-3 rounded-[10px] px-4 py-2">
+          <Skeleton className="h-[18px] w-[18px] rounded-sm bg-slate-200" />
+          <Skeleton className="h-[14px] w-[70px] rounded-sm bg-slate-200" />
+        </div>
+      </div>
+
+      <div className="mt-auto border-t border-gray-100 pt-4">
+        <div className="flex items-center gap-3 px-2 py-3">
+          <Skeleton className="h-10 w-10 rounded-full bg-slate-200" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-[14px] w-24 rounded-sm bg-slate-200" />
+            <Skeleton className="h-3 w-32 rounded-sm bg-slate-200" />
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+};
 
 const Sidebar = () => {
   const pathname = usePathname();
   const { user, isLoaded } = useUser();
 
-  if (!isLoaded) return null;
+  if (!isLoaded) return <SidebarSkeleton />;
 
   const displayName =
     user?.fullName ||
