@@ -20,25 +20,25 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <p className="text-gray-500 mt-1">
-          Welcome back, Dr. Roberts. Here is your overview.
+          Багш та дахин тавтай морил. Энд таны тойм байна.
         </p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-6">
-        <StatCard title="Active Exams" value="3" subtitle="Currently in progress"
+        <StatCard title="Active Exams" value="3" subtitle="Одоогоор хийгдэж байна"
           color="bg-blue-100 text-blue-600"
           icon={<FileText size={18} />}
         />
-        <StatCard title="Total Students" value="248" subtitle="Across all classes"
+        <StatCard title="Total Students" value="248" subtitle="Бүх ангиудад"
           color="bg-green-100 text-green-600"
           icon={<Users size={18} />}
         />
-        <StatCard title="Submissions" value="186" subtitle="Pending review"
+        <StatCard title="Submissions" value="186" subtitle="Хяналт хүлээгдэж байна"
           color="bg-green-100 text-green-600"
           icon={<CheckCircle size={18} />}
         />
-        <StatCard title="Alerts" value="12" subtitle="Tab switches detected"
+        <StatCard title="Alerts" value="12" subtitle="Таб шилжүүлэгчийг илрүүлсэн"
           color="bg-red-100 text-red-600"
           icon={<AlertTriangle size={18} />}
         />
@@ -48,7 +48,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 bg-white rounded-2xl p-4 border space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="font-semibold">Upcoming Exams</h3>
+            <h3 className="font-semibold">Удахгүй болох шалгалтууд</h3>
             <Calendar size={18} />
           </div>
 
@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
         <div className="bg-white rounded-2xl p-4 border space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="font-semibold">Recent Activity</h3>
+            <h3 className="font-semibold">Сүүлийн үеийн үйл ажиллагаа</h3>
             <TrendingUp size={18} />
           </div>
 
@@ -74,7 +74,7 @@ export default function DashboardPage() {
       {/* Performance */}
       <div className="bg-white rounded-2xl p-4 border space-y-4">
         <div className="flex justify-between items-center">
-          <h3 className="font-semibold">Class Performance</h3>
+          <h3 className="font-semibold">Ангийн гүйцэтгэл</h3>
           <GraduationCap size={18} />
         </div>
 

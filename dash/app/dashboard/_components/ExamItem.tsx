@@ -24,7 +24,7 @@ export const ExamItem = ({ title, date, time, students, duration }: ExamItemProp
     </div>
 
     <div className="text-right">
-      <p className="text-sm font-medium">{students} students</p>
+      <p className="text-sm font-medium">{students} Оюутанууд</p>
       <p className="text-xs text-gray-400">{duration}</p>
     </div>
   </div>
