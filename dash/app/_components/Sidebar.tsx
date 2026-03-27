@@ -29,15 +29,15 @@ const Sidebar = () => {
 
   return (
     <aside className="flex h-screen w-68 shrink-0 flex-col border-r border-gray-200 bg-white p-4">
-      <div className="mb-3 flex items-center gap-3 px-2 py-2">
+      <div className="mb-3 flex items-center gap-3  py-1">
         <div className="rounded-[10px] bg-[#2658c4] p-2">
-          <BookOpen className="h-4 w-4 text-white" />
+          <BookOpen className="h-3 w-3 text-white" />
         </div>
-        <span className="text-[18px] font-bold text-gray-800">ExamHub</span>
+        <span className="text-[18px] font-bold text-gray-800">LMS</span>
       </div>
       <div className="border-t border-gray-200 pt-1" />
 
-      <nav className="flex-1 space-y-1 pt-4">
+      <nav className="flex-1 space-y-1 pt-4 text-sm">
         <Link
           href="/"
           className={`flex items-center gap-3 rounded-[10px] px-4 py-2 transition-colors ${
@@ -46,8 +46,8 @@ const Sidebar = () => {
               : "text-gray-900 hover:bg-gray-50"
           }`}
         >
-          <LayoutDashboard size={16} />
-          <span className="font-medium">Dashboard</span>
+          <LayoutDashboard size={17} />
+          <span className="font-medium ">Нүүр</span>
         </Link>
 
         <Link
@@ -58,8 +58,8 @@ const Sidebar = () => {
               : "text-gray-900 hover:bg-gray-50"
           }`}
         >
-          <FileText size={16} />
-          <span className="font-medium">Exams</span>
+          <FileText size={18} />
+          <span className="font-medium">Шалгалт</span>
         </Link>
 
         <Link
@@ -70,8 +70,8 @@ const Sidebar = () => {
               : "text-gray-900 hover:bg-gray-50"
           }`}
         >
-          <GraduationCap size={16} />
-          <span className="font-medium">Grading</span>
+          <GraduationCap size={18} />
+          <span className="font-medium">Үнэлгээ</span>
         </Link>
 
         <Link
@@ -82,8 +82,8 @@ const Sidebar = () => {
               : "text-gray-900 hover:bg-gray-50"
           }`}
         >
-          <Monitor size={16} />
-          <span className="font-medium">Monitoring</span>
+          <Monitor size={18} />
+          <span className="font-medium">Хяналт</span>
         </Link>
 
         <Link
@@ -94,8 +94,8 @@ const Sidebar = () => {
               : "text-gray-900 hover:bg-gray-50"
           }`}
         >
-          <Users size={16} />
-          <span className="font-medium">Students</span>
+          <Users size={18} />
+          <span className="font-medium">Оюутнууд</span>
         </Link>
       </nav>
 
