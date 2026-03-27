@@ -10,20 +10,28 @@ import { ExamCard } from "./_components/ExamCard";
 import { EXAMS_DATA } from "./mockdata";
 import { SearchExam } from "./_components/SearchExam";
 import { SearchTabs } from "./_components/SearchTabs";
+import { Dialog } from "@/components/ui/dialog";
+import { CreateNewExam } from "./_components/CreateNewExam";
 
 const ExamDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
   const filteredExams = EXAMS_DATA.filter((exam) => {
-    const matchesSearch = exam.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = exam.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
 
     let matchesStatus = true;
     if (statusFilter !== "all") {
-      if (statusFilter === "in-progress" && exam.status !== "Авагдаж байгаа") matchesStatus = false;
-      if (statusFilter === "scheduled" && exam.status !== "Төлөвлөгдсөн") matchesStatus = false;
-      if (statusFilter === "completed" && exam.status !== "Дууссан") matchesStatus = false;
-      if (statusFilter === "drafts" && exam.status !== "Драфт") matchesStatus = false;
+      if (statusFilter === "in-progress" && exam.status !== "Авагдаж байгаа")
+        matchesStatus = false;
+      if (statusFilter === "scheduled" && exam.status !== "Төлөвлөгдсөн")
+        matchesStatus = false;
+      if (statusFilter === "completed" && exam.status !== "Дууссан")
+        matchesStatus = false;
+      if (statusFilter === "drafts" && exam.status !== "Драфт")
+        matchesStatus = false;
     }
 
     return matchesSearch && matchesStatus;
@@ -35,11 +43,12 @@ const ExamDashboard = () => {
       <div className="flex justify-between items-start mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Шалгалтууд</h1>
-          <p className="text-slate-500 text-sm">Шалгалтуудаа үүсгэж удирдана уу</p>
+          <p className="text-slate-500 text-sm">
+            Шалгалтуудаа үүсгэж удирдана уу
+          </p>
         </div>
-        <Button className="bg-[#006fee] hover:bg-[#005bc4] text-white flex gap-2">
-          <Plus size={18} /> Шалгалт нэмэх
-        </Button>
+
+        <CreateNewExam />
       </div>
 
       {/* Хайлт болон Шүүлтүүр */}
