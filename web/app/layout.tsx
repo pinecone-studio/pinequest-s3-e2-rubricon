@@ -3,6 +3,9 @@ import { Inter, JetBrains_Mono, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
+import ConditionalLayout from "./_components/main/ConditionalLayout";
+import Sidebar from "./_components/main/Sidebar";
+// import Sidebar from "./_components/main/Sidebar";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,8 +36,13 @@ export default function RootLayout({
         lang="en"
         className={`${inter.className} ${jetbrainsMono.variable} ${robotoMono.variable} h-full antialiased`}
       >
-        <body className="min-h-full flex flex-col">
-          <main>{children}</main>
+        <body className="min-h-full flex">
+          {/* <Sidebar /> */}
+          <main>
+            <ConditionalLayout sidebar={<Sidebar />}>
+              {children}
+            </ConditionalLayout>
+          </main>
           <Toaster position="top-center" expand={false} visibleToasts={1} />
         </body>
       </html>

@@ -76,7 +76,7 @@ export const ExamContent = () => {
 
   return (
     <div
-      className="flex flex-col h-screen bg-gray-50 overflow-hidden"
+      className="flex flex-col h-screen w-screen bg-gray-50 overflow-hidden"
       id="exam-area"
     >
       <ProctoringGuard />
