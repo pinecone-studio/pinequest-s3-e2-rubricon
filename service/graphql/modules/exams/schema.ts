@@ -71,5 +71,6 @@ export const examTypeDefs = `#graphql
       end_time: String
       duration: Int
     ): Exam
+    deleteExam(id: String!): Boolean
   }
 `;

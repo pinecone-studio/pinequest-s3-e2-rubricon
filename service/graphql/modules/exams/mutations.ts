@@ -244,4 +244,12 @@ export const examMutations = {
     if (error) throw new Error(error.message);
     return data;
   },
+  deleteExam: async (_: unknown, args: { id: string }) => {
+    try {
+      await rollbackExamInsert(args.id);
+      return true;
+    } catch (e) {
+      throw new Error(e instanceof Error ? e.message : "Failed to delete exam");
+    }
+  },
 };

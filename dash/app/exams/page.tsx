@@ -18,6 +18,7 @@ const EXAMS_QUERY = `#graphql
       end_time
       duration
       course {
+        id
         name
         code
       }
@@ -31,7 +32,7 @@ type GqlExam = {
   start_time: string;
   end_time: string;
   duration: number;
-  course: { name: string; code: string } | null;
+  course: { id: string; name: string; code: string } | null;
 };
 
 function examStatus(
@@ -62,6 +63,7 @@ function mapExam(e: GqlExam): ExamCardExam {
   return {
     id: e.id,
     title: e.title,
+    courseId: e.course?.id ?? "",
     courseLabel,
     dateLabel: start.toLocaleDateString(undefined, {
       year: "numeric",
@@ -74,6 +76,8 @@ function mapExam(e: GqlExam): ExamCardExam {
     }),
     durationLabel,
     status: examStatus(e.start_time, e.end_time),
+    rawStartTime: e.start_time,
+    rawDuration: e.duration,
   };
 }
 
@@ -156,7 +160,7 @@ const ExamDashboard = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredExams.map((exam) => (
-            <ExamCard key={exam.id} exam={exam} />
+            <ExamCard key={exam.id} exam={exam} onExamUpdated={load} />
           ))}
         </div>
       )}

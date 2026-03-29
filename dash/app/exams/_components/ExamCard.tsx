@@ -9,16 +9,37 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { graphqlRequest } from "@/lib/graphql";
+import { toast } from "sonner";
+import { useState } from "react";
+import { EditExamDialog } from "./EditExamDialog";
 
 export type ExamCardExam = {
   id: string;
   title: string;
+  courseId: string;
   courseLabel: string;
   dateLabel: string;
   timeLabel: string;
   durationLabel: string;
   status: "Төлөвлөгдсөн" | "Авагдаж байгаа" | "Дууссан" | "Драфт";
+  rawStartTime: string;
+  rawDuration: number;
 };
+
+const DELETE_EXAM = `#graphql
+  mutation DeleteExam($id: String!) {
+    deleteExam(id: $id)
+  }
+`;
 
 const statusConfig: Record<
   ExamCardExam["status"],
@@ -46,21 +67,41 @@ const statusConfig: Record<
   },
 };
 
-export const ExamCard = ({ exam }: { exam: ExamCardExam }) => {
+export const ExamCard = ({
+  exam,
+  onExamUpdated,
+}: {
+  exam: ExamCardExam;
+  onExamUpdated?: () => void;
+}) => {
   const config = statusConfig[exam.status] ?? statusConfig["Драфт"];
+  const [editOpen, setEditOpen] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm("Энэ шалгалтыг устгахдаа итгэлтэй байна уу?")) return;
+    try {
+      await graphqlRequest(DELETE_EXAM, { id: exam.id });
+      toast.success("Шалгалт устгагдлаа");
+      onExamUpdated?.();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Устгахад алдаа гарлаа");
+    }
+  };
 
   return (
-    <Link href={`/exams/${exam.id}`} className="block group">
-      <Card className="shadow-sm border-slate-200 rounded-xl overflow-hidden bg-white transition-shadow group-hover:shadow-md group-hover:border-slate-300">
-        <CardHeader className="flex flex-row justify-between items-start pt-6 px-6 pb-2">
-          <Badge
-            variant="secondary"
-            className={`${config.bg} border-none px-3 py-1 rounded-md flex gap-2 items-center font-medium text-[13px]`}
-          >
-            {config.icon}
-            {config.label}
-          </Badge>
-        </CardHeader>
+    <>
+      <div className="relative isolate">
+        <Link href={`/exams/${exam.id}`} className="block group">
+          <Card className="shadow-sm border-slate-200 rounded-xl overflow-hidden bg-white transition-shadow group-hover:shadow-md group-hover:border-slate-300">
+            <CardHeader className="flex flex-row justify-between items-start pt-6 px-6 pb-2">
+              <Badge
+                variant="secondary"
+                className={`${config.bg} border-none px-3 py-1 rounded-md flex gap-2 items-center font-medium text-[13px]`}
+              >
+                {config.icon}
+                {config.label}
+              </Badge>
+            </CardHeader>
 
         <CardContent className="px-6 pb-6 space-y-5">
           <div>
@@ -89,6 +130,33 @@ export const ExamCard = ({ exam }: { exam: ExamCardExam }) => {
           </div>
         </CardContent>
       </Card>
-    </Link>
+      </Link>
+      
+      <div className="absolute top-5 right-4 z-10">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-slate-900 bg-white shadow-sm border border-slate-200">
+              <MoreHorizontal size={16} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setEditOpen(true)} className="cursor-pointer">
+              <Pencil size={14} className="mr-2" /> Засах
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void handleDelete()} className="cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50">
+              <Trash2 size={14} className="mr-2" /> Устгах
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <EditExamDialog
+        exam={exam}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onUpdated={() => onExamUpdated?.()}
+      />
+    </div>
+    </>
   );
 };

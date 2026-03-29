@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { graphqlRequest } from "@/lib/graphql";
 import {
@@ -56,6 +56,12 @@ const EXAM_QUERY = `#graphql
 const DELETE_QUESTION = `#graphql
   mutation DeleteQuestion($id: String!) {
     deleteQuestion(id: $id)
+  }
+`;
+
+const DELETE_EXAM = `#graphql
+  mutation DeleteExam($id: String!) {
+    deleteExam(id: $id)
   }
 `;
 
@@ -124,6 +130,7 @@ const diffLabel: Record<string, string> = {
 
 export default function ExamDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const examId = typeof params.examId === "string" ? params.examId : "";
 
   const [exam, setExam] = useState<ExamDetail | null>(null);
@@ -133,6 +140,7 @@ export default function ExamDetailPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingExam, setDeletingExam] = useState(false);
 
   const load = useCallback(async () => {
     if (!examId) return;
@@ -180,6 +188,19 @@ export default function ExamDetailPage() {
     }
   };
 
+  const handleDeleteExam = async () => {
+    if (!exam || !confirm("Шалгалтыг бүр мөсөн устгах уу? Энэ үйлдэл буцаагдахгүй.")) return;
+    setDeletingExam(true);
+    try {
+      await graphqlRequest(DELETE_EXAM, { id: exam.id });
+      toast.success("Шалгалт устгагдлаа.");
+      router.push("/exams");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Алдаа гарлаа.");
+      setDeletingExam(false);
+    }
+  };
+
   if (!examId) {
     return (
       <div className="p-8">
@@ -224,32 +245,50 @@ export default function ExamDetailPage() {
           Шалгалтууд
         </Link>
 
-        <header className="mb-8">
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
-            {exam.title}
-          </h1>
-          {exam.course && (
-            <p className="mt-1 text-sm text-slate-500">
-              {exam.course.code} · {exam.course.name}
-            </p>
-          )}
-          {exam.description && (
-            <p className="mt-3 text-sm text-slate-600">{exam.description}</p>
-          )}
-          <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-sm text-slate-600">
-            <div>
-              <dt className="text-muted-foreground">Эхлэх</dt>
-              <dd>{formatWhen(exam.start_time)}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Дуусах</dt>
-              <dd>{formatWhen(exam.end_time)}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Хугацаа</dt>
-              <dd>{exam.duration} мин</dd>
-            </div>
-          </dl>
+        <header className="mb-8 flex flex-col md:flex-row md:items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
+              {exam.title}
+            </h1>
+            {exam.course && (
+              <p className="mt-1 text-sm text-slate-500">
+                {exam.course.code} · {exam.course.name}
+              </p>
+            )}
+            {exam.description && (
+              <p className="mt-3 text-sm text-slate-600">{exam.description}</p>
+            )}
+            <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-sm text-slate-600">
+              <div>
+                <dt className="text-muted-foreground">Эхлэх</dt>
+                <dd>{formatWhen(exam.start_time)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Дуусах</dt>
+                <dd>{formatWhen(exam.end_time)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Хугацаа</dt>
+                <dd>{exam.duration} мин</dd>
+              </div>
+            </dl>
+          </div>
+          
+          <div className="flex shrink-0 gap-2">
+            <Button
+              variant="outline"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => void handleDeleteExam()}
+              disabled={deletingExam}
+            >
+              {deletingExam ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 size-4" />
+              )}
+              Шалгалт устгах
+            </Button>
+          </div>
         </header>
 
         <div className="flex flex-wrap gap-2 mb-6">
