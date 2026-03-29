@@ -66,7 +66,7 @@ export function ActiveExamCard({
           </div>
 
           <Link
-            href={href}
+            href="/monitoring"
             className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-5 text-[14px] font-semibold text-slate-300 transition hover:border-[#00B89C]/25 hover:bg-[#00B89C]/5 hover:text-[#00B89C]">
             Хяналт руу орох
             <ChevronRight className="h-4 w-4" />
