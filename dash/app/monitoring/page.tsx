@@ -108,9 +108,7 @@ export default function MonitoringPage() {
   }
 
   return (
-    <div
-      className="min-h-screen bg-[var(--monitoring-page-bg)] p-6"
-      style={monitoringCssVars}>
+    <div className="min-h-screen bg-gray-50 p-6" style={monitoringCssVars}>
       <div className="mx-auto max-w-7xl space-y-4">
         <MonitoringHeader
           classFilter={classFilter}
