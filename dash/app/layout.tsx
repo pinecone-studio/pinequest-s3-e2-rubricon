@@ -3,6 +3,10 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import {
   ClerkProvider,
+  Show,
+  SignInButton,
+  SignUpButton,
+  UserButton,
   // Show,
   // SignInButton,
   // SignUpButton,
@@ -12,6 +16,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { Sidebar } from "./_components/Sidebar";
 import { Topbar } from "./_components/Topbar";
+import { Button } from "@base-ui/react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,7 +43,6 @@ export default function RootLayout({
           <div className="flex flex-1">
             <Sidebar />
             <main className="flex flex-col flex-1 ml-[220px]">
-              <Topbar />
               {/* <header className="flex justify-end items-center p-4 gap-4 h-16 bg-blue-50">
               <Show when="signed-out">
                 <SignInButton />
@@ -48,8 +52,8 @@ export default function RootLayout({
               </Show>
               <Show when="signed-in">
                 <UserButton />
-              </Show>
-            </header> */}
+              </Show> */}
+            {/* </header> */}
               {children}
             </main>
           </div>
