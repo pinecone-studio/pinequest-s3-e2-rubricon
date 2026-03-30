@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AddQuestionManually } from "./_components/AddQuestionManually";
-import { AIQuestionWizard } from "./_components/AIQuestionWizard";
+import { QuestionCreator } from "./_components/QuestionCreator";
 import type { ExamDifficulty, ExamQuestionDraft } from "../_components/exam-draft-types";
 
 const EXAM_QUERY = `#graphql
@@ -135,10 +135,8 @@ export default function ExamDetailPage() {
 
   const [exam, setExam] = useState<ExamDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [addOpen, setAddOpen] = useState(false);
   const [editDraft, setEditDraft] = useState<ExamQuestionDraft | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
-  const [aiOpen, setAiOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingExam, setDeletingExam] = useState(false);
 
@@ -164,7 +162,6 @@ export default function ExamDetailPage() {
   }, [load]);
 
   const openEdit = (q: QuestionRow) => {
-    setAddOpen(false);
     setEditId(q.id);
     setEditDraft(answersToDraft(q));
   };
@@ -291,20 +288,6 @@ export default function ExamDetailPage() {
           </div>
         </header>
 
-        <div className="flex flex-wrap gap-2 mb-6">
-          <Button
-            className="bg-[#006fee] hover:bg-[#005bc4] text-white gap-2"
-            onClick={() => setAddOpen(true)}
-          >
-            <Plus className="size-4" />
-            Гараар нэмэх
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => setAiOpen(true)}>
-            <Sparkles className="size-4" />
-            AI туслах
-          </Button>
-        </div>
-
         <section className="space-y-3">
           <h2 className="text-sm font-medium text-slate-500 uppercase tracking-wide">
             Асуултууд ({questions.length})
@@ -386,15 +369,9 @@ export default function ExamDetailPage() {
             </ul>
           )}
         </section>
-      </div>
 
-      <AddQuestionManually
-        examId={exam.id}
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        onSaved={() => void load()}
-        mode="add"
-      />
+        <QuestionCreator examId={exam.id} onSaved={() => void load()} />
+      </div>
 
       {editId && editDraft && (
         <AddQuestionManually
@@ -412,15 +389,6 @@ export default function ExamDetailPage() {
           initialDraft={editDraft}
         />
       )}
-
-      <Dialog open={aiOpen} onOpenChange={setAiOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>AI туслах</DialogTitle>
-          </DialogHeader>
-          <AIQuestionWizard onBack={() => setAiOpen(false)} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
