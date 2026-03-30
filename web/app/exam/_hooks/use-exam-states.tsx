@@ -107,6 +107,7 @@ const useExamStateInternal = ({
 
   return {
     exam,
+    questions,
     currentId: safeCurrentId,
     answers,
     flagged,

@@ -1,5 +1,8 @@
 "use client";
+import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import { submitExamToBackend } from "@/lib/exam-submissions";
 import { useExamState } from "../_hooks/use-exam-states";
 import ExamTimer from "./ExamTimer";
 import { CircleCheckBig, Flag, Send } from "lucide-react";
@@ -9,6 +12,7 @@ import { useRouter } from "next/navigation";
 export const ExamProgressBar = () => {
   const {
     exam,
+    questions,
     totalQuestions,
     currentId,
     answers,
@@ -18,12 +22,74 @@ export const ExamProgressBar = () => {
     clearSavedExam,
   } = useExamState();
   const router = useRouter();
+  const { user, isLoaded } = useUser();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const progress = Math.round((answeredCount / totalQuestions) * 100);
 
-  const handleFinishExam = () => {
-    clearSavedExam();
-    toast.success("Шалгалт хадгалагдлаа.");
-    router.push("/exams");
+  const getStartedAt = () => {
+    if (typeof window === "undefined") {
+      return new Date().toISOString();
+    }
+
+    const endsAt = localStorage.getItem(`exam-ends-at:${exam.id}`);
+
+    if (!endsAt) {
+      return new Date().toISOString();
+    }
+
+    const endsAtTime = Number(endsAt);
+
+    if (Number.isNaN(endsAtTime)) {
+      return new Date().toISOString();
+    }
+
+    return new Date(endsAtTime - exam.durationSeconds * 1000).toISOString();
+  };
+
+  const handleFinishExam = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    if (!isLoaded) {
+      toast.error("Хэрэглэгчийн мэдээлэл ачаалж байна.");
+      return;
+    }
+
+    const studentEmail = user?.primaryEmailAddress?.emailAddress;
+    const studentName =
+      user?.fullName || user?.username || studentEmail || "Student";
+
+    if (!studentEmail) {
+      toast.error("Хэрэглэгчийн имэйл олдсонгүй.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await submitExamToBackend({
+        studentEmail,
+        studentName,
+        examId: exam.id,
+        startedAt: getStartedAt(),
+        submittedAt: new Date().toISOString(),
+        questions,
+        answers,
+      });
+
+      clearSavedExam();
+      toast.success("Шалгалтын хариулт backend руу хадгалагдлаа.");
+      router.push("/exams");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Шалгалтын хариулт хадгалахад алдаа гарлаа.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -96,10 +162,11 @@ export const ExamProgressBar = () => {
       </div>
       <Button
         onClick={handleFinishExam}
+        disabled={isSubmitting}
         className="flex items-center font-semibold gap-3 rounded-md w-full px-6 py-5 bg-indigo-700"
       >
         <Send />
-        Шалгалт Дуусгах
+        {isSubmitting ? "Хадгалж байна..." : "Шалгалт Дуусгах"}
       </Button>
     </div>
   );

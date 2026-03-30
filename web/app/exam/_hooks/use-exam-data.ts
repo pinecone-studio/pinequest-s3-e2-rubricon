@@ -145,6 +145,7 @@ const buildExamData = (data: ExamQueryResponse): LoadedExamData | null => {
 
       return {
         id: index + 1,
+        questionId: question.id,
         question: question.text,
         type,
         difficulty: getDifficulty(question.difficulty),
@@ -153,6 +154,7 @@ const buildExamData = (data: ExamQueryResponse): LoadedExamData | null => {
             ? orderedAnswers.map((answer, answerIndex) => ({
                 id: choiceIds[answerIndex] ?? `${answerIndex + 1}`,
                 label: answer.text,
+                answerId: answer.id,
               }))
             : undefined,
         correctAnswer:
