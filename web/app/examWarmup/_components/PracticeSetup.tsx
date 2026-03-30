@@ -19,23 +19,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { upcomingExams } from "@/lib/data";
-import type { PracticeMode } from "./practiceTypes";
+import type {
+  PracticeDifficulty,
+  PracticeExamSummary,
+  PracticeMode,
+} from "./practiceTypes";
 
 type PracticeSetupProps = {
+  exams: PracticeExamSummary[];
+  examsLoading: boolean;
+  examsError: string | null;
   practiceMode: PracticeMode;
   setPracticeMode: (mode: PracticeMode) => void;
   selectedExam: string | null;
   setSelectedExam: (id: string) => void;
   selectedTopic: string | null;
   setSelectedTopic: (topic: string) => void;
-  difficulty: string;
-  setDifficulty: (value: string) => void;
+  difficulty: PracticeDifficulty;
+  setDifficulty: (value: PracticeDifficulty) => void;
   isGenerating: boolean;
   onStartPractice: () => void;
 };
 
 export default function PracticeSetup({
+  exams,
+  examsLoading,
+  examsError,
   practiceMode,
   setPracticeMode,
   selectedExam,
@@ -48,8 +57,13 @@ export default function PracticeSetup({
   onStartPractice,
 }: PracticeSetupProps) {
   const allTopics = Array.from(
-    new Set(upcomingExams.flatMap((exam) => exam.topics)),
+    new Set(
+      exams.flatMap((exam) =>
+        [exam.courseName, exam.courseCode, exam.title].filter(Boolean),
+      ),
+    ),
   );
+  const selectedExamDetails = exams.find((exam) => exam.id === selectedExam);
 
   return (
     <>
@@ -118,41 +132,66 @@ export default function PracticeSetup({
               <Select
                 value={selectedExam || ""}
                 onValueChange={setSelectedExam}
+                disabled={examsLoading || exams.length === 0}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Давтлага хийх шалгалтаа сонгоно уу" />
+                  <SelectValue
+                    placeholder={
+                      examsLoading
+                        ? "Шалгалтуудыг ачаалж байна..."
+                        : "Давтлага хийх шалгалтаа сонгоно уу"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {upcomingExams.map((exam) => (
+                  {exams.map((exam) => (
                     <SelectItem key={exam.id} value={exam.id}>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-xs">
-                          {exam.courseCode}
+                          {exam.courseCode || exam.courseName}
                         </Badge>
                         <span>{exam.title}</span>
-                        <span className="text-muted-foreground">-</span>
-                        <span className="text-muted-foreground">
-                          {new Date(exam.date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
+                        {exam.startTime ? (
+                          <>
+                            <span className="text-muted-foreground">-</span>
+                            <span className="text-muted-foreground">
+                              {new Date(exam.startTime).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                },
+                              )}
+                            </span>
+                          </>
+                        ) : null}
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {examsError ? (
+                <p className="text-sm text-red-600">{examsError}</p>
+              ) : null}
               {selectedExam && (
                 <div className="mt-4 rounded-lg bg-secondary/50 p-4">
-                  <h4 className="mb-2 font-medium">Хамрах сэдвүүд:</h4>
+                  <h4 className="mb-2 font-medium">Сонгосон шалгалт:</h4>
                   <div className="flex flex-wrap gap-2">
-                    {upcomingExams
-                      .find((exam) => exam.id === selectedExam)
-                      ?.topics.map((topic) => (
-                        <Badge key={topic} variant="secondary">
-                          {topic}
-                        </Badge>
-                      ))}
+                    <Badge variant="secondary">
+                      {selectedExamDetails?.courseCode ||
+                        selectedExamDetails?.courseName}
+                    </Badge>
+                    {selectedExamDetails?.startTime ? (
+                      <Badge variant="secondary">
+                        {new Date(
+                          selectedExamDetails.startTime,
+                        ).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </Badge>
+                    ) : null}
                   </div>
                 </div>
               )}

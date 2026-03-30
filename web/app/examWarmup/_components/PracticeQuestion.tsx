@@ -118,7 +118,7 @@ export default function PracticeQuestion({
           {showExplanation && (
             <div className="rounded-lg bg-secondary/50 p-4">
               <h4 className="mb-2 flex items-center gap-2 font-medium">
-                <BrainCircuit className="h-4 w-4 text-primary" />
+                {/* <BrainCircuit className="h-4 w-4 text-primary" /> */}
                 Тайлбар
               </h4>
               <p className="text-sm text-muted-foreground">
