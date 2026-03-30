@@ -45,9 +45,9 @@ export function StatCards({
       sub: "",
       icon: <Target className="w-4 h-4 text-slate-400" />,
       extra: (
-        <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-2">
+        <div className="w-full h-1 bg-[#e6f4f1] rounded-full overflow-hidden mt-2">
           <div
-            className="h-full bg-blue-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(59,130,246,0.3)]"
+            className="h-full bg-[#006d77] rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(59,130,246,0.3)]"
             style={{ width: `${accuracy}%` }}
           />
         </div>
@@ -68,9 +68,9 @@ export function StatCards({
           key={stat.label}
           className="bg-white/60 backdrop-blur-md border-white/40 shadow-sm ring-1 ring-black/5 rounded-xl overflow-hidden"
         >
-          <CardContent className="p-3 flex flex-col justify-between h-full">
+          <CardContent className="flex flex-col justify-between h-full">
             <div className="flex items-center justify-between mb-0.5">
-              <span className="text-[10px] font-bold text-slate-500 uppercase ">
+              <span className="text-[10px] font-semibold text-slate-500 uppercase ">
                 {stat.label}
               </span>
               <span className="opacity-80">{stat.icon}</span>

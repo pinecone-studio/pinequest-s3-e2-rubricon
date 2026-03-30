@@ -45,11 +45,11 @@ export const Header = () => {
     "хэрэглэгч";
 
   return (
-    <header className="mb-3">
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+    <header className="mb-5">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
         {greeting}, {isLoaded ? displayName : "хэрэглэгч"}
       </h1>
-      <p className="mt-1 text-slate-500">
+      <p className="mt-1 text-slate-500 text-[14px]">
         Энэ долоо хоногийн шалгалтын мэдээлэл, явцыг эндээс хараарай.
       </p>
     </header>
