@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { graphqlRequest } from "@/lib/graphql";
-import { ArrowLeft, Loader2, Plus, PenLine, Sparkles } from "lucide-react";
+import { Loader2, Plus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { AIQuestionWizard } from "../[examId]/_components/AIQuestionWizard";
 
@@ -68,12 +68,12 @@ type CreateExamData = {
   createExam: { id: string; title: string } | null;
 };
 
-type Step = "pick" | "shell" | "ai";
+type Step = "shell" | "ai";
 
 export const CreateNewExam = () => {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<Step>("pick");
+  const [step, setStep] = useState<Step>("shell");
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(false);
 
@@ -106,7 +106,7 @@ export const CreateNewExam = () => {
   }, [open, loadCourses]);
 
   const resetForm = () => {
-    setStep("pick");
+    setStep("shell");
     setTitle("");
     setDescription("");
     setCourseId("");
@@ -162,7 +162,7 @@ export const CreateNewExam = () => {
         start_time: timing.start_time,
         end_time: timing.end_time,
         duration: timing.duration,
-        type: "manual",
+        type: "mock",
       });
       const id = data.createExam?.id;
       if (!id) throw new Error("Шалгалтын ID ирээгүй.");
@@ -182,6 +182,9 @@ export const CreateNewExam = () => {
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
+        if (next) {
+          setStep("shell");
+        }
         if (!next) {
           resetForm();
         }
@@ -199,12 +202,10 @@ export const CreateNewExam = () => {
         <div className="border-b border-border/80 px-4 py-3 shrink-0">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
-              {step === "pick" && "Шинэ шалгалт"}
-              {step === "shell" && "Гараар үүсгэх"}
+              {step === "shell" && "Шинэ шалгалт үүсгэх"}
               {step === "ai" && "AI туслах"}
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
-              {step === "pick" && "Үүсгэх аргаа сонгоно уу."}
               {step === "shell" &&
                 "Үндсэн мэдээллээ оруулна уу. Асуултуудаа дараагийн алхамд нэмнэ."}
               {step === "ai" && "AI урсгалаа энд холбоно."}
@@ -213,54 +214,18 @@ export const CreateNewExam = () => {
         </div>
 
         <div className="overflow-y-auto flex-1 px-4 py-4 min-h-0">
-          {step === "pick" && (
-            <div className="grid gap-3">
-              <button
-                type="button"
-                onClick={() => setStep("shell")}
-                className="flex w-full items-start gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/50"
-              >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#006fee]/10 text-[#006fee]">
-                  <PenLine className="size-5" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">Гараар</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Эхлээд шалгалтын мэдээллээ оруулж, асуултуудаа дараа нь
-                    нэмнэ.
-                  </p>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setStep("ai")}
-                className="flex w-full items-start gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/50"
-              >
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-violet-700">
-                  <Sparkles className="size-5" />
-                </div>
-                <div>
-                  <p className="font-medium text-foreground">AI</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    AI тусламжтайгаар асуулт бэлтгэх (та өөрөө холбоно).
-                  </p>
-                </div>
-              </button>
-            </div>
-          )}
-
           {step === "shell" && (
             <FieldGroup className="gap-4">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="-ml-2 w-fit gap-1 text-muted-foreground"
-                onClick={() => setStep("pick")}
+                className="w-fit gap-2"
+                onClick={() => setStep("ai")}
                 disabled={saving}
               >
-                <ArrowLeft className="size-4" />
-                Буцах
+                <Sparkles className="size-4" />
+                AI туслах ашиглах
               </Button>
               <Field>
                 <Label htmlFor="exam-name">Шалгалтын нэр</Label>
@@ -355,7 +320,7 @@ export const CreateNewExam = () => {
             </FieldGroup>
           )}
 
-          {step === "ai" && <AIQuestionWizard onBack={() => setStep("pick")} />}
+          {step === "ai" && <AIQuestionWizard onBack={() => setStep("shell")} />}
         </div>
 
         {step === "shell" && (
