@@ -22,7 +22,7 @@ export const ExamProgressBar = () => {
 
   const handleFinishExam = () => {
     clearSavedExam();
-    toast.success("Шалгалтын хариулт хадгалагдаж, localStorage цэвэрлэгдлээ.");
+    toast.success("Шалгалт хадгалагдлаа.");
     router.push("/exams");
   };
 

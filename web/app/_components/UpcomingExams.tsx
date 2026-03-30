@@ -125,7 +125,8 @@ export default function UpcomingExams() {
 
   return (
     <div>
-      <h2 className="mb-4 text-base font-semibold text-foreground">
+      <h2 className="font-bold pb-4 text-[16px] text-slate-800 whitespace-nowrap transition-colors">
+        {" "}
         Өгөх шалгалтууд
       </h2>
 
@@ -151,15 +152,15 @@ export default function UpcomingExams() {
         {exams.map((exam) => (
           <div
             key={exam.id}
-            className="h-full rounded-2xl border border-gray-200 bg-gray-50 px-5 py-3"
+            className="h-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3"
           >
             <div className="flex h-full min-h-30 w-full flex-col justify-between gap-4">
               <div>
-                <p className="text-[12px] font-medium text-indigo-500">
+                <p className="text-[11px] font-medium text-[#006d77]">
                   {exam.subject}
                 </p>
 
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className="text-[18px] font-semibold text-gray-900">
                   {exam.title}
                 </h3>
               </div>
