@@ -18,11 +18,18 @@ const ConditionalLayout = ({
       : pathname.startsWith(route),
   );
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+  const useConstrainedWidth = !hideSidebar;
 
-  if (hideSidebar || isAuthRoute) return <>{children}</>;
+  if (hideSidebar || isAuthRoute) {
+    return (
+      <div className={useConstrainedWidth ? "mx-auto w-full max-w-360" : "w-full"}>
+        {children}
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-screen">
+    <div className={useConstrainedWidth ? "mx-auto flex h-screen w-full max-w-360" : "flex h-screen w-full"}>
       {sidebar}
       <main className="flex-1 overflow-auto overflow-x-hidden">{children}</main>
     </div>

@@ -19,6 +19,12 @@ type CreateSubmissionResponse = {
   };
 };
 
+type UpdateSubmissionResponse = {
+  updateSubmission: {
+    id: string;
+  };
+};
+
 type CreateSubmissionAnswerResponse = {
   createSubmissionAnswer: {
     id: string;
@@ -35,15 +41,13 @@ type SubmitExamInput = {
   answers: Record<number, string | null>;
 };
 
-type SubmissionAnswer =
-  | {
-      questionId: string;
-      textAnswer: string;
-    }
-  | {
-      questionId: string;
-      answerId: string;
-    };
+type SubmissionAnswer = {
+  questionId: string;
+  answerId?: string;
+  textAnswer?: string;
+  isCorrect?: boolean;
+  score?: number;
+};
 
 const STUDENT_BY_EMAIL_QUERY = `
   query StudentByEmail($email: String!) {
@@ -87,12 +91,34 @@ const CREATE_SUBMISSION_ANSWER_MUTATION = `
     $questionId: String!
     $answerId: String
     $textAnswer: String
+    $isCorrect: Boolean
+    $score: Int
   ) {
     createSubmissionAnswer(
       submission_id: $submissionId
       question_id: $questionId
       answer_id: $answerId
       text_answer: $textAnswer
+      is_correct: $isCorrect
+      score: $score
+    ) {
+      id
+    }
+  }
+`;
+
+const UPDATE_SUBMISSION_MUTATION = `
+  mutation UpdateSubmission(
+    $id: String!
+    $scoreAuto: Int
+    $finalScore: Int
+    $status: SubmissionStatus
+  ) {
+    updateSubmission(
+      id: $id
+      score_auto: $scoreAuto
+      final_score: $finalScore
+      status: $status
     ) {
       id
     }
@@ -124,6 +150,9 @@ const resolveStudentId = async (studentEmail: string, studentName: string) => {
   return createdStudent.createStudent.id;
 };
 
+const normalizeAnswerText = (value: string) =>
+  value.trim().replace(/\s+/g, " ").toLowerCase();
+
 const buildSubmissionAnswers = (
   questions: ExamQuestion[],
   answers: Record<number, string | null>,
@@ -142,10 +171,19 @@ const buildSubmissionAnswers = (
         return [];
       }
 
+      const normalizedStudentAnswer = normalizeAnswerText(textAnswer);
+      const normalizedCorrectAnswer = normalizeAnswerText(question.correctAnswer);
+      const isAutoGradable = normalizedCorrectAnswer.length > 0;
+      const isCorrect = isAutoGradable
+        ? normalizedStudentAnswer === normalizedCorrectAnswer
+        : undefined;
+
       return [
         {
           questionId: question.questionId,
           textAnswer,
+          isCorrect,
+          score: isCorrect ? question.points : isAutoGradable ? 0 : undefined,
         },
       ];
     }
@@ -160,9 +198,23 @@ const buildSubmissionAnswers = (
       {
         questionId: question.questionId,
         answerId: selectedChoice.answerId,
+        isCorrect: rawAnswer === question.correctAnswer,
+        score: rawAnswer === question.correctAnswer ? question.points : 0,
       },
     ];
   });
+};
+
+const canAutoGradeSubmission = (
+  questions: ExamQuestion[],
+) => {
+  if (questions.length === 0) {
+    return false;
+  }
+
+  return questions.every(
+    (question) => normalizeAnswerText(question.correctAnswer).length > 0,
+  );
 };
 
 export const submitExamToBackend = async ({
@@ -202,12 +254,28 @@ export const submitExamToBackend = async ({
         {
           submissionId,
           questionId: answer.questionId,
-          answerId: "answerId" in answer ? answer.answerId : undefined,
-          textAnswer: "textAnswer" in answer ? answer.textAnswer : undefined,
+          answerId: answer.answerId,
+          textAnswer: answer.textAnswer,
+          isCorrect: answer.isCorrect,
+          score: answer.score,
         },
       ),
     ),
   );
+
+  if (canAutoGradeSubmission(questions)) {
+    const finalScore = submissionAnswers.reduce(
+      (sum, answer) => sum + (answer.score ?? 0),
+      0,
+    );
+
+    await graphqlRequest<UpdateSubmissionResponse>(UPDATE_SUBMISSION_MUTATION, {
+      id: submissionId,
+      scoreAuto: finalScore,
+      finalScore,
+      status: "reviewed",
+    });
+  }
 
   return submissionId;
 };

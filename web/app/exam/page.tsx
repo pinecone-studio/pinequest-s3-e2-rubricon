@@ -14,7 +14,7 @@ const Exam = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 text-sm text-gray-500">
+      <div className="flex min-h-screen items-center justify-center  text-sm text-gray-500">
         Шалгалтыг ачаалж байна...
       </div>
     );
@@ -22,7 +22,7 @@ const Exam = () => {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-6 text-center text-sm text-red-600">
+      <div className="flex min-h-screen items-center justify-center  px-6 text-center text-sm text-red-600">
         {error}
       </div>
     );
@@ -30,7 +30,7 @@ const Exam = () => {
 
   if (!data || data.questions.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-6 text-center text-sm text-gray-500">
+      <div className="flex min-h-screen items-center justify-center  px-6 text-center text-sm text-gray-500">
         Энэ шалгалтад асуулт олдсонгүй.
       </div>
     );
@@ -105,7 +105,7 @@ export const ExamContent = () => {
 
   return (
     <div
-      className="flex flex-col h-screen w-screen bg-gray-50 overflow-hidden"
+      className="flex h-screen w-full flex-col overflow-hidden"
       id="exam-area"
     >
       <ProctoringGuard />

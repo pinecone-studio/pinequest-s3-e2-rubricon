@@ -10,6 +10,7 @@ export type ExamQuestion = {
   question: string;
   type: "Short Answer" | "Multiple Choice" | "True/False";
   difficulty: "Easy" | "Medium" | "Hard";
+  points: number;
   choices?: ExamChoice[];
   correctAnswer: string;
 };

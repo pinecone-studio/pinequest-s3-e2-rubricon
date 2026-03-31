@@ -149,6 +149,7 @@ const buildExamData = (data: ExamQueryResponse): LoadedExamData | null => {
         question: question.text,
         type,
         difficulty: getDifficulty(question.difficulty),
+        points: examQuestion.points ?? 0,
         choices:
           orderedAnswers.length > 0
             ? orderedAnswers.map((answer, answerIndex) => ({
