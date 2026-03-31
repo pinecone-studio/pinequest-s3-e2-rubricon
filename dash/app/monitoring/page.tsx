@@ -7,10 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 
 import { MonitoringFilters } from "./_components/MonitoringFilters";
 import { MonitoringHeader } from "./_components/MonitoringHeader";
-import { MonitoringPagination } from "./_components/MonitoringPagination";
 import { MonitoringPageSkeleton } from "./_components/MonitoringPageSkeleton";
 import { StatCard } from "./_components/StatCard";
-import { StudentCard } from "./_components/StudentCard";
 import { students } from "./_data/students";
 import { monitoringCssVars } from "./_lib/theme";
 
@@ -23,7 +21,6 @@ export default function MonitoringPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [studentFilter, setStudentFilter] = useState<StudentFilter>("all");
   const [classFilter, setClassFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -35,17 +32,14 @@ export default function MonitoringPage() {
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
-    setCurrentPage(1);
   };
 
   const handleStudentFilterChange = (value: StudentFilter) => {
     setStudentFilter(value);
-    setCurrentPage(1);
   };
 
   const handleClassChange = (value: string) => {
     setClassFilter(value);
-    setCurrentPage(1);
   };
 
   const classOptions = useMemo(() => {
@@ -76,17 +70,6 @@ export default function MonitoringPage() {
   }, [classFilteredStudents, searchTerm, studentFilter]);
 
   const totalPages = Math.max(1, Math.ceil(visibleStudents.length / PAGE_SIZE));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-
-  const handlePageChange = (page: number) => {
-    const nextPage = Math.max(1, Math.min(page, totalPages));
-    setCurrentPage(nextPage);
-  };
-
-  const paginatedStudents = useMemo(() => {
-    const startIndex = (safeCurrentPage - 1) * PAGE_SIZE;
-    return visibleStudents.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [visibleStudents, safeCurrentPage]);
 
   const stats = useMemo(() => {
     return {
@@ -171,19 +154,98 @@ export default function MonitoringPage() {
                 Илэрц олдсонгүй.
               </div>
             ) : (
-              <>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  {paginatedStudents.map((student) => (
-                    <StudentCard key={student.id} student={student} />
-                  ))}
+              <div className="overflow-hidden rounded-2xl border border-[var(--monitoring-dark-border)] bg-white">
+                <div className="grid grid-cols-12 gap-3 border-b border-[var(--monitoring-dark-border)] bg-gray-50 px-4 py-3 text-xs font-semibold text-[var(--monitoring-muted)]">
+                  <div className="col-span-3">Сурагч</div>
+                  <div className="col-span-3">Анги</div>
+                  <div className="col-span-2">Төлөв</div>
+                  <div className="col-span-3">Ахиц</div>
+                  <div className="col-span-1 text-right">Зөрчил</div>
                 </div>
 
-                <MonitoringPagination
-                  currentPage={safeCurrentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
-              </>
+                <div className="divide-y divide-[var(--monitoring-dark-border)]">
+                  {visibleStudents.map((student) => {
+                    const hasAlert =
+                      student.tabSwitches > 0 || Boolean(student.latestAlert);
+                    const statusText =
+                      student.status === "online"
+                        ? "Онлайн"
+                        : student.status === "offline"
+                          ? "Офлайн"
+                          : "Илгээсэн";
+
+                    const progressPercent = Math.round(
+                      (student.currentQuestion / student.totalQuestions) * 100,
+                    );
+
+                    return (
+                      <div
+                        key={student.id}
+                        className={`grid grid-cols-12 gap-3 px-4 py-3 text-sm ${
+                          hasAlert
+                            ? "bg-[var(--monitoring-warning-surface)]"
+                            : ""
+                        }`}
+                      >
+                        <div className="col-span-3 min-w-0">
+                          <p className="truncate font-semibold text-[var(--monitoring-dark)]">
+                            {student.name}
+                          </p>
+                          <p className="truncate text-xs text-[var(--monitoring-muted)]">
+                            {student.email}
+                          </p>
+                        </div>
+
+                        <div className="col-span-3 min-w-0">
+                          <p className="truncate text-[var(--monitoring-dark)]">
+                            {student.className}
+                          </p>
+                        </div>
+
+                        <div className="col-span-2">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                              student.status === "online"
+                                ? "bg-blue-50 text-blue-600"
+                                : student.status === "offline"
+                                  ? "bg-gray-100 text-gray-600"
+                                  : "bg-green-50 text-green-600"
+                            }`}
+                          >
+                            {statusText}
+                          </span>
+                        </div>
+
+                        <div className="col-span-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 flex-1 rounded-full bg-gray-100">
+                              <div
+                                className="h-2 rounded-full bg-[var(--monitoring-primary)]"
+                                style={{ width: `${progressPercent}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-[var(--monitoring-muted)]">
+                              {student.currentQuestion}/{student.totalQuestions}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="col-span-1 text-right">
+                          <span
+                            className={`text-xs font-semibold ${
+                              hasAlert
+                                ? "text-[var(--monitoring-warning)]"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            {student.tabSwitches}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>

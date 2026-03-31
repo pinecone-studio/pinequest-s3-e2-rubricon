@@ -40,7 +40,21 @@ function toRelative(iso?: string | null): string {
   const d = Math.floor(hr / 24);
   return `${d}ө өмнө`;
 }
+function getClassStudentIds(
+  classId: string,
+  enrollments: Enrollment[],
+  classSubs: Submission[],
+): Set<string> {
+  const ids = new Set(
+    enrollments.filter((e) => e.course_id === classId).map((e) => e.student_id),
+  );
 
+  for (const sub of classSubs) {
+    if (sub.student_id) ids.add(sub.student_id);
+  }
+
+  return ids;
+}
 const DEFAULT_RUBRIC: RubricCriterion[] = [
   {
     id: "accuracy",
@@ -109,11 +123,30 @@ export async function fetchGradingClasses(): Promise<ClassCourse[]> {
   return data.courses.map((c) => {
     const examIds = new Set((c.exams ?? []).map((e) => e.id));
     const courseSubs = data.submissions.filter((s) => examIds.has(s.exam_id));
-    const total = data.enrollments.filter((e) => e.course_id === c.id).length;
-    const graded = courseSubs.filter(
+
+    const classStudentIds = getClassStudentIds(
+      c.id,
+      data.enrollments,
+      courseSubs,
+    );
+
+    const latestByStudent = new Map<string, Submission>();
+    for (const s of courseSubs) {
+      const prev = latestByStudent.get(s.student_id);
+      const prevTs = new Date(
+        prev?.submitted_at ?? prev?.started_at ?? 0,
+      ).getTime();
+      const nextTs = new Date(s.submitted_at ?? s.started_at ?? 0).getTime();
+      if (!prev || nextTs >= prevTs) latestByStudent.set(s.student_id, s);
+    }
+
+    const latestSubs = Array.from(latestByStudent.values());
+
+    const graded = latestSubs.filter(
       (s) => s.final_score !== null && s.final_score !== undefined,
     ).length;
-    const pending = courseSubs.filter(
+
+    const pending = latestSubs.filter(
       (s) => s.final_score === null || s.final_score === undefined,
     ).length;
 
@@ -124,7 +157,7 @@ export async function fetchGradingClasses(): Promise<ClassCourse[]> {
       assignmentLabel: c.exams?.[0]?.title ?? "Шалгалт",
       pending,
       graded,
-      total: total || courseSubs.length,
+      total: classStudentIds.size,
     };
   });
 }
@@ -145,12 +178,11 @@ export async function fetchClassStudents(classId: string): Promise<{
 
   const examIds = new Set((course.exams ?? []).map((e) => e.id));
   const courseSubs = data.submissions.filter((s) => examIds.has(s.exam_id));
-  const enrolledIds = new Set(
-    data.enrollments
-      .filter((e) => e.course_id === classId)
-      .map((e) => e.student_id),
+  const classStudentIds = getClassStudentIds(
+    classId,
+    data.enrollments,
+    courseSubs,
   );
-
   const latestByStudent = new Map<string, Submission>();
   for (const s of courseSubs) {
     const prev = latestByStudent.get(s.student_id);
@@ -162,7 +194,7 @@ export async function fetchClassStudents(classId: string): Promise<{
   }
 
   const students = data.students
-    .filter((s) => enrolledIds.has(s.id))
+    .filter((s) => classStudentIds.has(s.id))
     .map((s) => {
       const sub = latestByStudent.get(s.id);
       const graded =
@@ -224,9 +256,31 @@ export async function fetchStudentGradingContext(
   student: Student | null;
   submissionId: string | null;
 }> {
+  const STUDENT_QUERY = `
+query GradingStudent($courseId: String!, $studentId: String!) {
+  course(id: $courseId) {
+    id
+    code
+    name
+    exams {
+      id
+      title
+      questions { id text type order_index }
+    }
+  }
+  student(id: $studentId) { id name email }
+  students { id name email }
+  enrollments { id student_id course_id }
+  submissions {
+    id student_id exam_id started_at submitted_at final_score
+    answers { id question_id answer_id text_answer }
+  }
+}
+`;
   const data = await gql<{
     course: Course | null;
     student: StudentRow | null;
+    students: StudentRow[];
     enrollments: Enrollment[];
     submissions: Submission[];
   }>(STUDENT_QUERY, { courseId: classId, studentId });
@@ -241,21 +295,41 @@ export async function fetchStudentGradingContext(
   }
 
   const examIds = new Set((data.course.exams ?? []).map((e) => e.id));
+
   const classSubs = data.submissions.filter((s) => examIds.has(s.exam_id));
-  const enrolledIds = new Set(
-    data.enrollments
-      .filter((e) => e.course_id === classId)
-      .map((e) => e.student_id),
+  const classStudentIds = getClassStudentIds(
+    classId,
+    data.enrollments,
+    classSubs,
   );
 
-  const classStudents = Array.from(enrolledIds).map((sid) => {
-    const sub = classSubs.find((s) => s.student_id === sid);
+  const latestByStudent = new Map<string, Submission>();
+  for (const s of classSubs) {
+    const prev = latestByStudent.get(s.student_id);
+    const prevTs = new Date(
+      prev?.submitted_at ?? prev?.started_at ?? 0,
+    ).getTime();
+    const nextTs = new Date(s.submitted_at ?? s.started_at ?? 0).getTime();
+    if (!prev || nextTs >= prevTs) latestByStudent.set(s.student_id, s);
+  }
+
+  const studentMap = new Map(data.students.map((s) => [s.id, s]));
+
+  const classStudents = Array.from(classStudentIds).map((sid) => {
+    const row = studentMap.get(sid);
+    const sub = latestByStudent.get(sid);
+
+    const name =
+      row?.name ?? (sid === data.student?.id ? data.student.name : sid);
+    const email =
+      row?.email ??
+      (sid === data.student?.id ? data.student.email : `${sid}@unknown.local`);
+
     return {
       id: sid,
-      name: sid === data.student?.id ? data.student.name : sid,
-      email:
-        sid === data.student?.id ? data.student.email : `${sid}@unknown.local`,
-      initials: sid === data.student?.id ? toInitials(data.student.name) : "??",
+      name,
+      email,
+      initials: toInitials(name),
       submittedAt: toRelative(sub?.submitted_at ?? sub?.started_at),
       status:
         sub?.final_score !== null && sub?.final_score !== undefined
@@ -321,7 +395,7 @@ export async function fetchStudentGradingContext(
       graded: classSubs.filter(
         (s) => s.final_score !== null && s.final_score !== undefined,
       ).length,
-      total: enrolledIds.size,
+      total: classStudentIds.size,
     },
     classStudents,
     student,
@@ -340,5 +414,37 @@ export async function saveSubmissionScore(
     }
     `,
     { id: submissionId, final_score: Math.round(score) },
+  );
+}
+
+export async function publishSubmissionGrade(
+  submissionId: string,
+  finalScore: number,
+  manualScore = 0,
+): Promise<void> {
+  await gql<{ updateSubmission: { id: string } }>(
+    `
+    mutation PublishSubmissionGrade(
+      $id: String!
+      $final_score: Int
+      $score_manual: Int
+      $status: SubmissionStatus
+    ) {
+      updateSubmission(
+        id: $id
+        final_score: $final_score
+        score_manual: $score_manual
+        status: $status
+      ) {
+        id
+      }
+    }
+    `,
+    {
+      id: submissionId,
+      final_score: Math.round(finalScore),
+      score_manual: Math.round(manualScore),
+      status: "reviewed",
+    },
   );
 }

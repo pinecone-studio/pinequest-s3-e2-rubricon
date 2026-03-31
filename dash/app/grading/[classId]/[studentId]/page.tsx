@@ -11,11 +11,9 @@ import { toast } from "sonner";
 
 import {
   fetchStudentGradingContext,
-  saveSubmissionScore,
+  publishSubmissionGrade,
 } from "../../mockData";
 
-import { GradingHeader } from "./_components/GradingHeader";
-import { StudentInfoHeader } from "./_components/StudentInfoHeader";
 import { EssaySubmission } from "./_components/EssaySubmission";
 import { GradingSidebar } from "./_components/GradingSidebar";
 
@@ -88,6 +86,8 @@ const GradeStudentPage = () => {
     };
   }, [student, essayIndex, essayStates]);
 
+  const hasEssay = (student?.essays?.length ?? 0) > 0;
+
   const handleRubricChange = (criterionId: string, score: number) => {
     setEssayStates((prev) => {
       const next = [...prev];
@@ -115,10 +115,39 @@ const GradeStudentPage = () => {
         toast.error("Submission олдсонгүй");
         return;
       }
-      await saveSubmissionScore(submissionId, totalScore);
-      toast.success("Оноо амжилттай хадгалагдлаа!");
+
+      const manualScore = essayStates.reduce(
+        (sum, es) => sum + es.rubric.reduce((s2, r) => s2 + r.score, 0),
+        0,
+      );
+
+      await publishSubmissionGrade(submissionId, totalScore, manualScore);
+
+      setStudent((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "Дүгнэгдсэн",
+              mcScore: Math.round(totalScore),
+            }
+          : prev,
+      );
+
+      setAllStudents((prev) =>
+        prev.map((s) =>
+          s.id === studentId
+            ? {
+                ...s,
+                status: "Дүгнэгдсэн",
+                mcScore: Math.round(totalScore),
+              }
+            : s,
+        ),
+      );
+
+      toast.success("Дүн хадгалагдаж, оюутанд амжилттай илгээгдлээ.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Хадгалах үед алдаа гарлаа");
+      toast.error(e instanceof Error ? e.message : "Илгээх үед алдаа гарлаа");
     }
   };
 
@@ -130,10 +159,10 @@ const GradeStudentPage = () => {
     }
   };
 
-  if (!student || !course || !currentEssay) {
+  if (loading) return <div className="p-8 text-gray-500">Уншиж байна...</div>;
+  if (!student || !course) {
     return <div className="p-8 text-gray-500">Оюутан олдсонгүй.</div>;
   }
-
   const gradedCount = allStudents.filter(
     (s) => s.status === "Дүгнэгдсэн",
   ).length;
@@ -152,51 +181,88 @@ const GradeStudentPage = () => {
   const totalScore = student.mcScore + totalRubricScore;
   const maxTotalScore = student.mcTotal + maxRubricScore;
 
-  if (loading) return <div className="p-8 text-gray-500">Уншиж байна...</div>;
-  if (!student || !course || !currentEssay) {
-    return <div className="p-8 text-gray-500">Оюутан олдсонгүй.</div>;
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <GradingHeader
-        classId={classId}
-        totalStudents={allStudents.length}
-        gradedCount={gradedCount}
-        pendingCount={pendingCount}
-      />
-      <StudentInfoHeader
-        student={student}
-        currentEssay={essayIndex + 1}
-        totalEssays={student.essays.length}
-      />
+    <div className="flex flex-1 overflow-hidden">
+      {hasEssay ? (
+        <>
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {currentEssay ? (
+              <EssaySubmission
+                essay={currentEssay}
+                essayIndex={essayIndex}
+                totalEssays={student.essays.length}
+                onPrev={() => setEssayIndex((i) => Math.max(0, i - 1))}
+                onNext={() =>
+                  setEssayIndex((i) =>
+                    Math.min(student.essays.length - 1, i + 1),
+                  )
+                }
+              />
+            ) : (
+              <div className="p-8 text-gray-500">Эссе мэдээлэл олдсонгүй.</div>
+            )}
+          </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <EssaySubmission
-            essay={currentEssay}
-            essayIndex={essayIndex}
-            totalEssays={student.essays.length}
-            onPrev={() => setEssayIndex((i) => Math.max(0, i - 1))}
-            onNext={() =>
-              setEssayIndex((i) => Math.min(student.essays.length - 1, i + 1))
-            }
-          />
+          {currentEssay && (
+            <GradingSidebar
+              mcScore={student.mcScore}
+              mcTotal={student.mcTotal}
+              currentEssay={currentEssay}
+              onRubricChange={handleRubricChange}
+              onFeedbackChange={handleFeedbackChange}
+              totalScore={totalScore}
+              maxTotalScore={maxTotalScore}
+              onSubmit={handleSubmit}
+              onPrevStudent={() => navigateStudent("prev")}
+              onNextStudent={() => navigateStudent("next")}
+            />
+          )}
+        </>
+      ) : (
+        <div className="flex-1 p-8">
+          <div className="mx-auto max-w-2xl bg-white border border-gray-200 rounded-2xl p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Шалгалтын дүн
+            </h3>
+
+            <div className="space-y-2 text-sm text-gray-600">
+              <p>
+                Оюутан:{" "}
+                <span className="font-medium text-gray-900">
+                  {student.name}
+                </span>
+              </p>
+              <p>
+                Тестийн оноо:{" "}
+                <span className="font-medium text-gray-900">
+                  {student.mcScore}/{student.mcTotal}
+                </span>
+              </p>
+              <p>
+                Нийт дүн:{" "}
+                <span className="font-bold text-blue-600">
+                  {totalScore}/{maxTotalScore}
+                </span>
+              </p>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={handleSubmit}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
+              >
+                Дүн хадгалах
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-4 py-2 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700"
+              >
+                Оюутанд илгээх
+              </button>
+            </div>
+          </div>
         </div>
-
-        <GradingSidebar
-          mcScore={student.mcScore}
-          mcTotal={student.mcTotal}
-          currentEssay={currentEssay}
-          onRubricChange={handleRubricChange}
-          onFeedbackChange={handleFeedbackChange}
-          totalScore={totalScore}
-          maxTotalScore={maxTotalScore}
-          onSubmit={handleSubmit}
-          onPrevStudent={() => navigateStudent("prev")}
-          onNextStudent={() => navigateStudent("next")}
-        />
-      </div>
+      )}
     </div>
   );
 };

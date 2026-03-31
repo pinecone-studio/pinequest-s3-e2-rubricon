@@ -1,22 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import {
-  ClerkProvider,
-  Show,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-  // Show,
-  // SignInButton,
-  // SignUpButton,
-  // UserButton,
-} from "@clerk/nextjs";
-// import { Button } from "@/components/ui/button";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/components/ui/sonner";
 import { Sidebar } from "./_components/Sidebar";
-import { Topbar } from "./_components/Topbar";
-import { Button } from "@base-ui/react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -39,24 +26,13 @@ export default function RootLayout({
         lang="en"
         className={`${inter.className} h-full antialiased`}
       >
-        <body className="flex min-h-screen bg-[#f0f4f8]">
-          <div className="flex flex-1">
-            <Sidebar />
-            <main className="flex flex-col flex-1 ml-[220px]">
-              {/* <header className="flex justify-end items-center p-4 gap-4 h-16 bg-blue-50">
-              <Show when="signed-out">
-                <SignInButton />
-                <SignUpButton>
-                  <Button>Sign Up</Button>
-                </SignUpButton>
-              </Show>
-              <Show when="signed-in">
-                <UserButton />
-              </Show> */}
-            {/* </header> */}
-              {children}
-            </main>
-          </div>
+        <body className="min-h-screen bg-[#f0f4f8]">
+          <Sidebar />
+
+          <main className="ml-[220px] min-h-screen">
+            <div className="w-full max-w-[1440px] mx-auto">{children}</div>
+          </main>
+
           <Toaster position="top-center" />
         </body>
       </html>
