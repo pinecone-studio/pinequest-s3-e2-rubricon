@@ -1,10 +1,19 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { mockClasses, studentsByClass } from "../../mockData";
-import { RubricCriterion } from "@/lib/grading/types";
+import { useEffect, useMemo, useState } from "react";
+import {
+  RubricCriterion,
+  type ClassCourse,
+  type Student,
+} from "@/lib/grading/types";
 import { toast } from "sonner";
+
+import {
+  fetchStudentGradingContext,
+  saveSubmissionScore,
+} from "../../mockData";
+
 import { GradingHeader } from "./_components/GradingHeader";
 import { StudentInfoHeader } from "./_components/StudentInfoHeader";
 import { EssaySubmission } from "./_components/EssaySubmission";
@@ -16,29 +25,66 @@ const GradeStudentPage = () => {
   const classId = params.classId as string;
   const studentId = params.studentId as string;
 
-  const course = mockClasses.find((c) => c.id === classId);
-  const allStudents = studentsByClass[classId] ?? [];
+  const [loading, setLoading] = useState(true);
+  const [course, setCourse] = useState<ClassCourse | null>(null);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [student, setStudent] = useState<Student | null>(null);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [essayIndex, setEssayIndex] = useState(0);
+
+  const [essayStates, setEssayStates] = useState<
+    { rubric: RubricCriterion[]; feedback: string }[]
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetchStudentGradingContext(classId, studentId);
+        if (cancelled) return;
+
+        setCourse(res.course);
+        setAllStudents(res.classStudents);
+        setStudent(res.student);
+        setSubmissionId(res.submissionId);
+        setEssayIndex(0);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [classId, studentId]);
+
+  useEffect(() => {
+    if (!student) {
+      setEssayStates([]);
+      return;
+    }
+
+    setEssayStates(
+      student.essays.map((e) => ({
+        rubric: e.rubric.map((r) => ({ ...r })),
+        feedback: e.feedback,
+      })),
+    );
+  }, [student]);
+
   const studentIndex = allStudents.findIndex((s) => s.id === studentId);
-  const student = allStudents[studentIndex];
-
-  const [essayIndex, setEssayIndex] = useState<number>(0);
-
-  const [essayStates, setEssayStates] = useState(() =>
-    (student?.essays ?? []).map((e) => ({
-      rubric: e.rubric.map((r) => ({ ...r })) as RubricCriterion[],
-      feedback: e.feedback,
-    })),
-  );
 
   const currentEssay = useMemo(() => {
-    if (!student) return null;
+    if (!student || student.essays.length === 0) return null;
+
+    const base = student.essays[essayIndex];
+    const state = essayStates[essayIndex];
+
     return {
-      ...student.essays[essayIndex],
-      rubric:
-        essayStates[essayIndex]?.rubric ?? student.essays[essayIndex].rubric,
-      feedback:
-        essayStates[essayIndex]?.feedback ??
-        student.essays[essayIndex].feedback,
+      ...base,
+      rubric: state?.rubric ?? base.rubric,
+      feedback: state?.feedback ?? base.feedback,
     };
   }, [student, essayIndex, essayStates]);
 
@@ -63,8 +109,17 @@ const GradeStudentPage = () => {
     });
   };
 
-  const handleSubmit = () => {
-    toast.success("Оноо амжилттай хадгалагдлаа!");
+  const handleSubmit = async () => {
+    try {
+      if (!submissionId) {
+        toast.error("Submission олдсонгүй");
+        return;
+      }
+      await saveSubmissionScore(submissionId, totalScore);
+      toast.success("Оноо амжилттай хадгалагдлаа!");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Хадгалах үед алдаа гарлаа");
+    }
   };
 
   const navigateStudent = (direction: "prev" | "next") => {
@@ -96,6 +151,11 @@ const GradeStudentPage = () => {
   );
   const totalScore = student.mcScore + totalRubricScore;
   const maxTotalScore = student.mcTotal + maxRubricScore;
+
+  if (loading) return <div className="p-8 text-gray-500">Уншиж байна...</div>;
+  if (!student || !course || !currentEssay) {
+    return <div className="p-8 text-gray-500">Оюутан олдсонгүй.</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
