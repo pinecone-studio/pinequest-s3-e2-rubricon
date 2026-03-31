@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import CourseCard from "./_components/CourseCard";
 import StudentTable from "./_components/StudentTable";
+import TrendChart from "./_components/TrendChart";
+
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,6 +16,7 @@ import {
 
 import { useStudentSearch } from "./_hooks/use-student-search";
 import { ExamHistory, Student } from "./type";
+import ScoreChart from "./_components/ScoreCharts";
 
 /* ================= MOCK ================= */
 
@@ -25,12 +28,6 @@ const examHistoryTemplate = [
 
 const clampScore = (score: number) => Math.min(99, Math.max(55, score));
 
-const getGrade = (score: number) => {
-  if (score >= 90) return "A";
-  if (score >= 80) return "B";
-  return "C";
-};
-
 const buildMockExamHistory = (
   avg: number,
   count: number,
@@ -41,7 +38,7 @@ const buildMockExamHistory = (
     date: exam.date,
     score: clampScore(avg + exam.delta),
     maxScore: 100,
-    grade: getGrade(avg),
+    grade: "B",
   }));
 
 /* ================= STUDENTS ================= */
@@ -541,44 +538,40 @@ const getAnalytics = (students: Student[]) => {
     total === 0
       ? 0
       : Math.round(
-          students.reduce((acc, s) => acc + s.averageScore, 0) / total
+          students.reduce((a, s) => a + s.averageScore, 0) / total
         );
 
   const topStudent =
     students.length > 0
-      ? students.reduce((prev, current) =>
-          prev.averageScore > current.averageScore ? prev : current
+      ? students.reduce((p, c) =>
+          p.averageScore > c.averageScore ? p : c
         )
       : null;
 
-  const trend = {
-    up: students.filter((s) => s.trend === "up").length,
-    down: students.filter((s) => s.trend === "down").length,
-    stable: students.filter((s) => s.trend === "stable").length,
-  };
-
-  return { total, avgScore, topStudent, trend };
+  return { total, avgScore, topStudent };
 };
 
-/* ================= STATS ================= */
+const getInsight = (students: Student[]) => {
+  const missing = students.filter((s) => s.examsTaken === 0).length;
+  const low = students.filter((s) => s.averageScore < 60).length;
+
+  if (missing > 0) return `⚠ ${missing} шалгалт өгөөгүй`;
+  if (low > 0) return `⚠ ${low} муу дүнтэй оюутан байна`;
+
+  return "✅ Хэвийн";
+};
 
 function getCourseStats(courseId: string) {
-  const students = initialStudents.filter(
-    (s) => s.course === courseId
-  );
-
-  const total = students.length;
-
-  const progress = students.filter(
-    (s) => s.examsTaken > 0
-  ).length;
-
-  return { total, progress };
+  const s = initialStudents.filter((x) => x.course === courseId);
+  return {
+    total: s.length,
+    progress: s.filter((x) => x.examsTaken > 0).length,
+  };
 }
 
 /* ================= PAGE ================= */
 
-export default function StudentsPage() {
+export default function Page() {
   const {
     searchQuery,
     setSearchQuery,
@@ -589,114 +582,99 @@ export default function StudentsPage() {
     filteredItems,
   } = useStudentSearch(initialStudents);
 
+  const analytics = getAnalytics(filteredItems);
+
   const availableMajors = Array.from(
-    new Set(
-      initialStudents
-        .filter((s) =>
-          courseFilter === "all" ? true : s.course === courseFilter
-        )
-        .map((s) => s.major)
-    )
+    new Set(initialStudents.map((s) => s.major))
   );
 
   useEffect(() => {
     setMajorFilter("all");
-  }, [courseFilter, setMajorFilter]);
-
-  const analytics = getAnalytics(filteredItems);
+  }, [courseFilter]);
 
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-6">
 
-      {/* COURSE CARDS */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        {courses.map((course) => {
-          const stats = getCourseStats(course.id);
-
+      {/* COURSE */}
+      <div className="grid grid-cols-4 gap-4">
+        {courses.map((c) => {
+          const stats = getCourseStats(c.id);
           return (
             <CourseCard
-              key={course.id}
-              id={course.id}
-              title={course.title}
-              subtitle={course.subtitle}
+              key={c.id}
+              id={c.id}
+              title={c.title}
+              subtitle={c.subtitle}
               students={stats.total}
               progress={stats.progress}
               total={stats.total}
-              active={courseFilter === course.id}
-              onClick={(id) => setCourseFilter(id)}
+              active={courseFilter === c.id}
+              onClick={setCourseFilter}
             />
           );
         })}
       </div>
 
       {/* ANALYTICS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="p-5 bg-white rounded-2xl border">
-          <div className="text-sm text-gray-500">Нийт оюутан</div>
-          <div className="text-2xl font-bold">{analytics.total}</div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="p-4 border rounded-xl">
+          Нийт: {analytics.total}
         </div>
-
-        <div className="p-5 bg-white rounded-2xl border">
-          <div className="text-sm text-gray-500">Дундаж оноо</div>
-          <div className="text-2xl font-bold text-blue-600">
-            {analytics.avgScore}%
-          </div>
+        <div className="p-4 border rounded-xl">
+          Дундаж: {analytics.avgScore}%
         </div>
-
-        <div className="p-5 bg-white rounded-2xl border">
-          <div className="text-sm text-gray-500">Шилдэг оюутан</div>
-          <div className="text-lg font-semibold">
-            {analytics.topStudent?.name}
-          </div>
-          <div className="text-sm text-gray-500">
-            {analytics.topStudent?.averageScore}%
-          </div>
-        </div>
-
-        <div className="p-5 bg-white rounded-2xl border">
-          <div className="text-sm text-gray-500 mb-2">Ахиц</div>
-          <div className="flex gap-3 text-sm">
-            <span className="text-green-600">↑ {analytics.trend.up}</span>
-            <span className="text-gray-500">→ {analytics.trend.stable}</span>
-            <span className="text-red-500">↓ {analytics.trend.down}</span>
-          </div>
+        <div className="p-4 border rounded-xl">
+          Шилдэг: {analytics.topStudent?.name}
         </div>
       </div>
 
-      {/* FILTERS */}
-      <div className="flex gap-4 mb-6">
-        <Input
-          placeholder="Хайх"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+      {/* FILTER */}
+      <div className="flex flex-wrap items-center gap-3">
+        
+  <Input
+    className="w-48 md:w-56 lg:w-64"
+    placeholder="Оюутан хайх..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+  />
 
-        <Select value={courseFilter} onValueChange={setCourseFilter}>
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Курс" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Бүх курс</SelectItem>
-            <SelectItem value="1-р курс">1-р курс</SelectItem>
-            <SelectItem value="2-р курс">2-р курс</SelectItem>
-            <SelectItem value="3-р курс">3-р курс</SelectItem>
-            <SelectItem value="4-р курс">4-р курс</SelectItem>
-          </SelectContent>
-        </Select>
+  <Select value={courseFilter} onValueChange={setCourseFilter}>
+    <SelectTrigger className="w-36">
+      <SelectValue placeholder="Курс" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">Бүгд</SelectItem>
+      <SelectItem value="1-р курс">1-р курс</SelectItem>
+      <SelectItem value="2-р курс">2-р курс</SelectItem>
+      <SelectItem value="3-р курс">3-р курс</SelectItem>
+      <SelectItem value="4-р курс">4-р курс</SelectItem>
+    </SelectContent>
+  </Select>
 
-        <Select value={majorFilter} onValueChange={setMajorFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Мэргэжил" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Бүх мэргэжил</SelectItem>
-            {availableMajors.map((m) => (
-              <SelectItem key={m} value={m}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+  <Select value={majorFilter} onValueChange={setMajorFilter}>
+    <SelectTrigger className="w-40">
+      <SelectValue placeholder="Мэргэжил" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">Бүгд</SelectItem>
+      {availableMajors.map((m) => (
+        <SelectItem key={m} value={m}>
+          {m}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
+
+      {/* INSIGHT */}
+      <div className="p-3 bg-blue-50 border rounded">
+        {getInsight(filteredItems)}
+      </div>
+
+      {/* CHART */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        <ScoreChart students={filteredItems} />
+        <TrendChart students={filteredItems} />
       </div>
 
       {/* TABLE */}
