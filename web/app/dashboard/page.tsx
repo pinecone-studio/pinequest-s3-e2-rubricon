@@ -1,10 +1,10 @@
 import {
   ExamCalendar,
   Header,
+  MyExamSessions,
+  RecentSubmittedExams,
   StatCards,
-  StudyProgressChart,
 } from "./_components";
-import MyCourses from "./_components/MyCourses";
 
 const DashboardPage = () => {
   return (
@@ -12,10 +12,10 @@ const DashboardPage = () => {
       <Header />
       <StatCards />
       <div className="mt-6 flex flex-col gap-4 lg:flex-row lg:items-start">
-        <StudyProgressChart className="min-w-0 lg:basis-0 lg:flex-[1.7]" />
-        <ExamCalendar className="min-w-0 lg:basis-0 lg:flex-1" />
+        <MyExamSessions className="min-w-0 lg:basis-0 lg:flex-[2]" />
+        <ExamCalendar className="min-w-0 lg:basis-0 lg:flex-[0.8]" />
       </div>
-      <MyCourses />
+      <RecentSubmittedExams />
     </div>
   );
 };

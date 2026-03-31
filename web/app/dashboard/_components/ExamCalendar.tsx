@@ -360,7 +360,7 @@ export function ExamCalendar({
   return (
     <Card
       className={cn(
-        "flex min-h-[320px] min-w-0 self-start flex-col overflow-hidden rounded-2xl border-white/40 bg-white/60 shadow-sm ring-1 ring-black/5 sm:min-h-[340px] lg:min-h-[360px]",
+        "flex min-h-[286px] min-w-0 w-full self-start flex-col overflow-hidden rounded-2xl border-white/40 bg-white/60 shadow-sm ring-1 ring-black/5 sm:min-h-[306px] lg:min-h-[324px] lg:max-w-[380px] xl:max-w-[392px]",
         className,
       )}
     >

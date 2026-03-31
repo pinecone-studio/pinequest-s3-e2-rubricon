@@ -105,6 +105,8 @@ type CompletedExamDetailItem = {
   score?: number | null;
 };
 
+const SUBMITTED_EXAMS_HASH = "#submitted-exams";
+
 const COMPLETED_EXAMS_QUERY = `
   query CompletedExams($email: String!) {
     studentByEmail(email: $email) {
@@ -261,6 +263,24 @@ const CompletedExams = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const { user, isLoaded } = useUser();
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (window.location.hash !== SUBMITTED_EXAMS_HASH) {
+      return;
+    }
+
+    setIsOpen(true);
+
+    requestAnimationFrame(() => {
+      document
+        .getElementById("submitted-exams")
+        ?.scrollIntoView({ block: "start" });
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -492,7 +512,7 @@ const CompletedExams = () => {
   }, [isDialogOpen, selectedExam]);
 
   return (
-    <section className="mt-14">
+    <section id="submitted-exams" className="mt-14 scroll-mt-24">
       <button
         type="button"
         onClick={() => setIsOpen((prev: boolean) => !prev)}
