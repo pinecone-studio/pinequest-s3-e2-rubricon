@@ -5,10 +5,25 @@ const OPTION_COUNT = 5;
 
 type ManualQuestionArgs = {
   content: string;
+  image_url?: string | null;
   difficulty: "easy" | "medium" | "hard";
   options: string[];
   correctOptionIndex: number;
 };
+
+const isMissingImageUrlColumnError = (error: { message?: string } | null) => {
+  const msg = error?.message?.toLowerCase() ?? "";
+  if (error) {
+    console.log("Checking for missing image_url column error:", { msg, error });
+  }
+  return (
+    msg.includes("could not find the 'image_url' column") &&
+    msg.includes("questions")
+  );
+};
+
+const hasImageUrlPayload = (value: string | null | undefined) =>
+  typeof value === "string" && value.trim().length > 0;
 
 async function rollbackExamInsert(examId: string) {
   // Remove junction rows first
@@ -35,6 +50,7 @@ type CreateExamArgs = {
   end_time: string;
   duration: number;
   type?: string;
+  image_url?: string;
 };
 
 export const examMutations = {
@@ -57,6 +73,7 @@ export const examMutations = {
       end_time: string;
       duration: number;
       type?: string;
+      image_url?: string;
       questions: Array<{ text: string; type: string; order_index: number }>;
     },
   ) => {
@@ -107,6 +124,7 @@ export const examMutations = {
       end_time: string;
       duration: number;
       type?: string;
+      image_url?: string;
       questions: ManualQuestionArgs[];
     },
   ) => {
@@ -152,6 +170,7 @@ export const examMutations = {
       end_time: examFields.end_time,
       duration: examFields.duration,
       type: examFields.type,
+      image_url: examFields.image_url,
     };
 
     const { data: exam, error: examError } = await supabase
@@ -167,6 +186,7 @@ export const examMutations = {
       const questionRows = questions.map((q, orderIndex) => ({
         exam_id: exam.id,
         text: q.content.trim(),
+        image_url: q.image_url ?? null,
         type: "multiple_choice",
         order_index: orderIndex,
         difficulty: q.difficulty,
@@ -183,13 +203,30 @@ export const examMutations = {
         if (first.error) {
           const msg = first.error.message?.toLowerCase() ?? "";
           const missingDifficulty = msg.includes("difficulty");
-          if (missingDifficulty) {
-            const withoutDifficulty = questionRows.map(
-              ({ difficulty: _d, ...rest }) => rest,
+          const missingImageUrl = isMissingImageUrlColumnError(first.error);
+          const includesImage = questionRows.some((row) =>
+            hasImageUrlPayload(row.image_url),
+          );
+          console.log("Supabase insertion error detail:", { error: first.error, includesImage, missingImageUrl });
+          if (missingImageUrl && includesImage) {
+            throw new Error(
+              "questions.image_url column is missing. Please run the latest migration to store question images.",
             );
+          }
+          if (missingDifficulty || missingImageUrl) {
+            const normalizedRows = questionRows.map((row) => {
+              const noDifficulty = missingDifficulty
+                ? (({ difficulty: _d, ...rest }) => rest)(row)
+                : row;
+              if (missingImageUrl) {
+                const { image_url: _img, ...rest } = noDifficulty;
+                return rest;
+              }
+              return noDifficulty;
+            });
             const second = await supabase
               .from("questions")
-              .insert(withoutDifficulty)
+              .insert(normalizedRows)
               .select("id, order_index");
             if (second.error) throw new Error(second.error.message);
             insertedQuestions = second.data;
@@ -260,6 +297,7 @@ export const examMutations = {
       end_time?: string;
       duration?: number;
       type?: string;
+      image_url?: string;
     },
   ) => {
     const payload = pickDefined({
@@ -270,6 +308,7 @@ export const examMutations = {
       end_time: args.end_time,
       duration: args.duration,
       type: args.type,
+      image_url: args.image_url,
     });
 
     const { data, error } = await supabase
@@ -296,6 +335,7 @@ export const examMutations = {
     args: {
       exam_id: string;
       content: string;
+      image_url?: string | null;
       difficulty: "easy" | "medium" | "hard";
       options: string[];
       correctOptionIndex: number;
@@ -303,15 +343,41 @@ export const examMutations = {
   ) => {
     const OPTION_COUNT = 5;
     // 1. Insert question row
-    const { data: question, error: qErr } = await supabase
+    const firstInsert = await supabase
       .from("questions")
       .insert([{
         text: args.content.trim(),
+        image_url: args.image_url ?? null,
         type: "multiple_choice",
         difficulty: args.difficulty,
       }])
       .select()
       .single();
+    let question = firstInsert.data;
+    let qErr = firstInsert.error;
+
+    if (qErr) {
+      console.log("addManualQuestionToExam insertion error:", qErr);
+    }
+
+    if (qErr && isMissingImageUrlColumnError(qErr)) {
+      if (hasImageUrlPayload(args.image_url)) {
+        throw new Error(
+          "questions.image_url column is missing. Please run the latest migration to store question images.",
+        );
+      }
+      const secondInsert = await supabase
+        .from("questions")
+        .insert([{
+          text: args.content.trim(),
+          type: "multiple_choice",
+          difficulty: args.difficulty,
+        }])
+        .select()
+        .single();
+      question = secondInsert.data;
+      qErr = secondInsert.error;
+    }
     if (qErr) throw new Error(qErr.message);
 
     // 2. Get current max order_index in exam_questions for this exam
@@ -354,6 +420,7 @@ export const examMutations = {
     args: {
       id: string;
       content: string;
+      image_url?: string | null;
       difficulty: "easy" | "medium" | "hard";
       options: string[];
       correctOptionIndex: number;
@@ -361,12 +428,41 @@ export const examMutations = {
   ) => {
     const OPTION_COUNT = 5;
     // 1. Update question text + difficulty
-    const { data: question, error: qErr } = await supabase
+    const firstUpdate = await supabase
       .from("questions")
-      .update({ text: args.content.trim(), difficulty: args.difficulty })
+      .update({
+        text: args.content.trim(),
+        image_url: args.image_url ?? null,
+        difficulty: args.difficulty,
+      })
       .eq("id", args.id)
       .select()
       .single();
+    let question = firstUpdate.data;
+    let qErr = firstUpdate.error;
+
+    if (qErr) {
+      console.log("updateManualQuestion update error:", qErr);
+    }
+
+    if (qErr && isMissingImageUrlColumnError(qErr)) {
+      if (hasImageUrlPayload(args.image_url)) {
+        throw new Error(
+          "questions.image_url column is missing. Please run the latest migration to store question images.",
+        );
+      }
+      const secondUpdate = await supabase
+        .from("questions")
+        .update({
+          text: args.content.trim(),
+          difficulty: args.difficulty,
+        })
+        .eq("id", args.id)
+        .select()
+        .single();
+      question = secondUpdate.data;
+      qErr = secondUpdate.error;
+    }
     if (qErr) throw new Error(qErr.message);
 
     // 2. Delete existing answers and re-insert

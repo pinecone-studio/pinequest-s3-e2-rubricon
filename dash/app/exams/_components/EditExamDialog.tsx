@@ -19,9 +19,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { graphqlRequest } from "@/lib/graphql";
-import { Loader2 } from "lucide-react";
+import { Loader2, ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import type { ExamCardExam } from "./ExamCard";
+import { uploadImageToCloudinary } from "@/lib/utils/imageUpload";
 
 const COURSES_QUERY = `#graphql
   query CoursesForExam {
@@ -41,6 +42,7 @@ const UPDATE_EXAM = `#graphql
     $start_time: String
     $end_time: String
     $duration: Int
+    $image_url: String
   ) {
     updateExam(
       id: $id
@@ -49,6 +51,7 @@ const UPDATE_EXAM = `#graphql
       start_time: $start_time
       end_time: $end_time
       duration: $duration
+      image_url: $image_url
     ) {
       id
     }
@@ -81,7 +84,9 @@ export const EditExamDialog = ({
   const [examDate, setExamDate] = useState(initialDate);
   const [examTime, setExamTime] = useState(initialTime);
   const [durationMinutes, setDurationMinutes] = useState(String(exam.rawDuration));
+  const [imageUrl, setImageUrl] = useState(exam.image_url || null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -144,6 +149,7 @@ export const EditExamDialog = ({
         start_time: timing.start_time,
         end_time: timing.end_time,
         duration: timing.duration,
+        image_url: imageUrl,
       });
       toast.success("Шалгалт шинэчлэгдлээ.");
       onOpenChange(false);
@@ -232,6 +238,48 @@ export const EditExamDialog = ({
                 </SelectContent>
               </Select>
             </Field>
+            <Field>
+                <Label>Шалгалтын ковер зураг (заавал биш)</Label>
+                <div className="mt-2 flex items-center gap-4">
+                  {imageUrl ? (
+                    <div className="relative size-20 rounded-lg border overflow-hidden">
+                      <img src={imageUrl} alt="Exam cover" className="size-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl(null)}
+                        className="absolute top-1 right-1 bg-white/80 rounded-full p-0.5 hover:bg-white"
+                      >
+                        <X size={14} className="text-red-600" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center size-20 rounded-lg border border-dashed border-slate-300 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
+                      <ImageIcon className="size-6 text-slate-400" />
+                      <span className="text-[10px] text-slate-500 mt-1">Зураг</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={uploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploading(true);
+                          try {
+                            const url = await uploadImageToCloudinary(file);
+                            setImageUrl(url);
+                          } catch (err) {
+                            toast.error("Зураг хуулахад алдаа гарлаа.");
+                          } finally {
+                            setUploading(false);
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                  {uploading && <Loader2 className="size-5 animate-spin text-[#006fee]" />}
+                </div>
+              </Field>
           </FieldGroup>
         </div>
         <div className="flex justify-end gap-3 pt-2">

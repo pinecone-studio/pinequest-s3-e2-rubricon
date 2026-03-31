@@ -20,6 +20,7 @@ export async function graphqlRequest<T>(
   const json = (await res.json()) as GraphQLResponse<T>;
 
   if (!res.ok) {
+    console.log("GraphQL Request failed with status:", res.status, "Response json:", json);
     throw new Error(json.errors?.[0]?.message ?? `HTTP ${res.status}`);
   }
   if (json.errors?.length) {

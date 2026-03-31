@@ -33,6 +33,7 @@ export type ExamCardExam = {
   status: "Төлөвлөгдсөн" | "Авагдаж байгаа" | "Дууссан" | "Драфт";
   rawStartTime: string;
   rawDuration: number;
+  image_url?: string | null;
 };
 
 const DELETE_EXAM = `#graphql
@@ -93,7 +94,17 @@ export const ExamCard = ({
       <div className="relative isolate">
         <Link href={`/exams/${exam.id}`} className="block group">
           <Card className="shadow-sm border-slate-200 rounded-xl overflow-hidden bg-white transition-shadow group-hover:shadow-md group-hover:border-slate-300">
-            <CardHeader className="flex flex-row justify-between items-start pt-6 px-6 pb-2">
+            <div className="absolute inset-0 z-0">
+               {exam.image_url ? (
+                 <>
+                   <img src={exam.image_url} alt="" className="w-full h-full object-cover" />
+                   <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent" />
+                 </>
+               ) : (
+                 <div className="w-full h-full bg-slate-50" />
+               )}
+            </div>
+            <CardHeader className="relative z-10 flex flex-row justify-between items-start pt-6 px-6 pb-2">
               <Badge
                 variant="secondary"
                 className={`${config.bg} border-none px-3 py-1 rounded-md flex gap-2 items-center font-medium text-[13px]`}
@@ -103,7 +114,7 @@ export const ExamCard = ({
               </Badge>
             </CardHeader>
 
-        <CardContent className="px-6 pb-6 space-y-5">
+        <CardContent className="relative z-10 px-6 pb-6 space-y-5 bg-white/80 backdrop-blur-sm">
           <div>
             <h3 className="font-bold text-[20px] text-slate-900 leading-tight group-hover:text-[#006fee] transition-colors">
               {exam.title}

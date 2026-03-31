@@ -6,17 +6,29 @@ type CreateQuestionArgs = {
   type: string;
   difficulty?: "easy" | "medium" | "hard";
   category?: string;
+  image_url?: string;
 };
 
 export const questionMutations = {
   createQuestion: async (_: unknown, args: CreateQuestionArgs) => {
     const { data, error } = await supabase
       .from("questions")
-      .insert([args])
+      .insert([
+        {
+          text: args.text, // Frontend-ийн content-ийг DB-ийн text-рүү
+          image_url: args.image_url, // image_url-ийг шууд
+          type: args.type || "multiple_choice",
+          difficulty: args.difficulty,
+          category: args.category,
+        },
+      ])
       .select()
       .single();
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.log("createQuestion error:", error);
+      throw new Error(error.message);
+    }
     return data;
   },
 
@@ -28,6 +40,7 @@ export const questionMutations = {
       type?: string;
       difficulty?: string;
       category?: string;
+      image_url?: string;
     },
   ) => {
     const payload = pickDefined({
@@ -35,6 +48,7 @@ export const questionMutations = {
       type: args.type,
       difficulty: args.difficulty,
       category: args.category,
+      image_url: args.image_url,
     });
 
     const { data, error } = await supabase
@@ -44,7 +58,10 @@ export const questionMutations = {
       .select()
       .single();
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.log("updateQuestion error:", error);
+      throw new Error(error.message);
+    }
     return data;
   },
 

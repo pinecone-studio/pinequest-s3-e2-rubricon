@@ -15,6 +15,7 @@ const ADD_MUTATION = `#graphql
   mutation AddManualQuestion(
     $exam_id: String!
     $content: String!
+    $image_url: String
     $difficulty: QuestionDifficulty!
     $options: [String!]!
     $correctOptionIndex: Int!
@@ -22,6 +23,7 @@ const ADD_MUTATION = `#graphql
     addManualQuestionToExam(
       exam_id: $exam_id
       content: $content
+      image_url: $image_url
       difficulty: $difficulty
       options: $options
       correctOptionIndex: $correctOptionIndex
@@ -41,6 +43,7 @@ function parsedToDraft(p: any): ExamQuestionDraft {
   return {
     id: crypto.randomUUID(),
     content: p.text || "",
+    image_url: null,
     difficulty: "medium",
     options,
     correctOptionIndex: 0,
@@ -51,15 +54,25 @@ export function QuestionCreator({ examId, onSaved }: { examId: string; onSaved: 
   const [activeTab, setActiveTab] = useState("manual");
   const [drafts, setDrafts] = useState<ExamQuestionDraft[]>([createEmptyQuestion()]);
   const [saving, setSaving] = useState(false);
+  const [uploadingByDraft, setUploadingByDraft] = useState<Record<string, boolean>>({});
   const [loadingOcr, setLoadingOcr] = useState(false);
   const [rawText, setRawText] = useState("");
+  const hasUploading = Object.values(uploadingByDraft).some(Boolean);
 
   const handleAddDraft = () => {
     setDrafts([...drafts, createEmptyQuestion()]);
   };
 
   const handleRemoveDraft = (index: number) => {
+    const toRemove = drafts[index];
     setDrafts(drafts.filter((_, i) => i !== index));
+    if (toRemove?.id) {
+      setUploadingByDraft((prev) => {
+        const next = { ...prev };
+        delete next[toRemove.id];
+        return next;
+      });
+    }
   };
 
   const handleChangeDraft = (index: number, next: ExamQuestionDraft) => {
@@ -121,6 +134,10 @@ export function QuestionCreator({ examId, onSaved }: { examId: string; onSaved: 
   };
 
   const handleSaveAll = async () => {
+    if (hasUploading) {
+      toast.error("Зураг upload дуусаагүй байна. Түр хүлээгээд дахин оролдоно уу.");
+      return;
+    }
     // Basic validation
     for (let j = 0; j < drafts.length; j++) {
       const d = drafts[j];
@@ -138,10 +155,17 @@ export function QuestionCreator({ examId, onSaved }: { examId: string; onSaved: 
 
     setSaving(true);
     try {
-      for (const draft of drafts) {
+      for (let i = 0; i < drafts.length; i++) {
+        const draft = drafts[i];
+        console.log(`Saving question ${i+1}/${drafts.length}:`, {
+          content: draft.content,
+          image_url: draft.image_url,
+          difficulty: draft.difficulty
+        });
         await graphqlRequest(ADD_MUTATION, {
           exam_id: examId,
           content: draft.content,
+          image_url: draft.image_url ?? null,
           difficulty: draft.difficulty,
           options: [...draft.options],
           correctOptionIndex: draft.correctOptionIndex,
@@ -149,6 +173,7 @@ export function QuestionCreator({ examId, onSaved }: { examId: string; onSaved: 
       }
       toast.success("Асуултууд амжилттай хадгалагдлаа.");
       setDrafts([createEmptyQuestion()]);
+      setUploadingByDraft({});
       onSaved();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Алдаа гарлаа.");
@@ -253,6 +278,12 @@ export function QuestionCreator({ examId, onSaved }: { examId: string; onSaved: 
             onChange={(next) => handleChangeDraft(idx, next)}
             onRemove={() => handleRemoveDraft(idx)}
             canRemove={drafts.length > 1}
+            onUploadStateChange={(isUploading) =>
+              setUploadingByDraft((prev) => ({
+                ...prev,
+                [draft.id]: isUploading,
+              }))
+            }
           />
         ))}
 
@@ -281,7 +312,7 @@ export function QuestionCreator({ examId, onSaved }: { examId: string; onSaved: 
           <Button
             className="w-full sm:w-auto bg-[#006fee] hover:bg-[#005bc4] text-white gap-2 px-8 shadow-md"
             onClick={() => void handleSaveAll()}
-            disabled={saving || drafts.length === 0}
+            disabled={saving || hasUploading || drafts.length === 0}
             size="lg"
           >
             {saving ? (
