@@ -81,13 +81,8 @@ const formatSubmittedAt = (value: string) => {
     month: "2-digit",
     day: "2-digit",
   }).format(submittedAt);
-  const time = new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(submittedAt);
 
-  return `${date} · ${time}`;
+  return date;
 };
 
 const getStatusLabel = (status: RecentSubmissionCard["status"]) =>
@@ -228,21 +223,21 @@ export function RecentSubmittedExams() {
       </div>
 
       {loading ? (
-        <div className="space-y-3">
+        <div className="w-full space-y-2 lg:max-w-5xl">
           {Array.from({ length: 3 }, (_, index) => (
             <Card
               key={`recent-submission-skeleton-${index + 1}`}
-              className="overflow-hidden rounded-2xl border-white/40 bg-white/60 shadow-sm ring-1 ring-black/5"
+              className="overflow-hidden rounded-xl border-white/40 bg-white/60 shadow-sm ring-1 ring-black/5"
             >
-              <CardContent className="flex items-center justify-between gap-4 p-4">
-                <div className="flex items-start gap-3">
-                  <Skeleton className="h-10 w-10 rounded-xl bg-slate-200" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-3 w-20 bg-slate-200" />
-                    <Skeleton className="h-5 w-56 bg-slate-200" />
+              <CardContent className="flex items-center justify-between gap-1.5 px-3 py-1">
+                <div className="flex items-start gap-1.5">
+                  <Skeleton className="h-7 w-7 rounded-md bg-slate-200" />
+                  <div className="space-y-1">
+                    <Skeleton className="h-2.5 w-20 bg-slate-200" />
+                    <Skeleton className="h-3.5 w-44 bg-slate-200" />
                   </div>
                 </div>
-                <Skeleton className="h-7 w-24 rounded-full bg-slate-200" />
+                <Skeleton className="h-5 w-16 rounded-full bg-slate-200" />
               </CardContent>
             </Card>
           ))}
@@ -250,50 +245,56 @@ export function RecentSubmittedExams() {
       ) : null}
 
       {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-600">
+        <div className="w-full rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-600 lg:max-w-5xl">
           {error}
         </div>
       ) : null}
 
       {!loading && !error && items.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-500">
+        <div className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-500 lg:max-w-5xl">
           {message}
         </div>
       ) : null}
 
       {!loading && !error && items.length > 0 ? (
-        <div className="space-y-3">
+        <div className="w-full space-y-1">
           {items.map((item) => (
             <Card
               key={item.id}
-              className="overflow-hidden rounded-2xl border-white/40 bg-white/60 shadow-sm ring-1 ring-black/5"
+              className="overflow-hidden rounded-2xl border-slate-100 bg-white/70 shadow-sm transition-hover hover:bg-white"
             >
-              <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e6f4f1] text-[#006d77]">
-                    <FileCheck2 className="h-4 w-4" />
-                  </div>
+              <CardContent className="px-3 py-1">
+                <div className="flex items-center justify-between gap-2">
+                  {/* Зүүн тал: Icon болон Text */}
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f0f9f8] text-[#006d77]">
+                      <FileCheck2 className="h-4 w-4" />
+                    </div>
 
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-medium text-[#006d77]">
-                      {item.subject}
-                    </p>
-                    <h3 className="mt-1 line-clamp-2 text-sm font-semibold text-slate-900 md:text-base">
-                      {item.title}
-                    </h3>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-semibold uppercase leading-none tracking-wider text-[#006d77]/70">
+                          {item.subject}
+                        </span>
+                        <span className="mb-0.5 text-slate-300">•</span>
+                        <span className="flex items-center gap-1 text-[10px] font-medium leading-none text-slate-500">
+                          <CalendarDays className="h-3 w-3" />
+                          {formatSubmittedAt(item.submittedAt)}
+                        </span>
+                      </div>
 
-                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                      <span className="flex items-center gap-1.5">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        {formatSubmittedAt(item.submittedAt)}
-                      </span>
-                      <span>{item.answeredCount} хариулт илгээсэн</span>
+                      <h3 className="mt-0.5 text-[14px] font-semibold leading-tight">
+                        {item.title}
+                      </h3>
                     </div>
                   </div>
-                </div>
 
-                <div className="inline-flex self-start items-center rounded-full bg-[#e6f4f1] px-4 py-2 text-xs font-medium text-[#006d77] md:self-center">
-                  {getStatusLabel(item.status)}
+                  {/* Баруун тал: Статус болон Хариултын тоо */}
+                  <div className="flex shrink-0 items-center gap-2">
+                    <div className="rounded-full bg-[#e6f4f1] px-2.5 py-1 text-[10px] font-bold text-[#006d77]">
+                      {getStatusLabel(item.status)}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

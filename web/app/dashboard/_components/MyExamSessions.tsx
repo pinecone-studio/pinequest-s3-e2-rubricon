@@ -213,7 +213,8 @@ const buildExamBuckets = (
     })
     .sort(
       (left, right) =>
-        new Date(left.startTime).getTime() - new Date(right.startTime).getTime(),
+        new Date(left.startTime).getTime() -
+        new Date(right.startTime).getTime(),
     );
 
   return { current, today };
@@ -300,7 +301,10 @@ const SectionList = ({
 export function MyExamSessions({ className }: MyExamSessionsProps) {
   const { user, isLoaded } = useUser();
   const router = useRouter();
-  const [buckets, setBuckets] = useState<ExamBuckets>({ current: [], today: [] });
+  const [buckets, setBuckets] = useState<ExamBuckets>({
+    current: [],
+    today: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -387,7 +391,7 @@ export function MyExamSessions({ className }: MyExamSessionsProps) {
             </div>
             Миний шалгалтууд
           </CardTitle>
-          <CardDescription className="pl-9 text-[11px] font-medium text-slate-400">
+          <CardDescription className="pl-9 text-[12px] font-medium text-slate-400">
             Яг одоо явагдаж буй болон өнөөдөр товлогдсон шалгалтууд.
           </CardDescription>
         </div>
@@ -430,7 +434,9 @@ export function MyExamSessions({ className }: MyExamSessionsProps) {
           <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-600">
             {error}
           </div>
-        ) : message && buckets.current.length === 0 && buckets.today.length === 0 ? (
+        ) : message &&
+          buckets.current.length === 0 &&
+          buckets.today.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm text-slate-500">
             {message}
           </div>

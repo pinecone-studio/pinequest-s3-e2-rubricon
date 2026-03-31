@@ -226,9 +226,10 @@ const getQuestionTypeLabel = (value: string | null | undefined) => {
   if (
     normalized.includes("short") ||
     normalized.includes("essay") ||
-    normalized.includes("text")
+    normalized.includes("text") ||
+    normalized.includes("open")
   ) {
-    return "Богино хариулт";
+    return "Задгай асуулт";
   }
 
   if (
@@ -512,7 +513,10 @@ const CompletedExams = () => {
   }, [isDialogOpen, selectedExam]);
 
   return (
-    <section id="submitted-exams" className="mt-14 scroll-mt-24">
+    <section
+      id="submitted-exams"
+      className="mt-14 scroll-mt-24 lg:max-w-[calc(75%-0.375rem)]"
+    >
       <button
         type="button"
         onClick={() => setIsOpen((prev: boolean) => !prev)}

@@ -33,9 +33,9 @@ type CourseExamResponse = {
     exams: {
       id: string;
       title: string;
-      start_time: string;
-      end_time: string;
-      duration: number;
+      start_time: string | null;
+      end_time: string | null;
+      duration: number | null;
       type: string;
     }[];
   }[];
@@ -60,6 +60,22 @@ type UpcomingExamCard = {
   title: string;
   date: string;
   time: string;
+  duration: number | null;
+  hasKnownStartTime: boolean;
+};
+
+const parseExamDate = (value: string | null | undefined) => {
+  if (!value || value.trim().length === 0) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed;
 };
 
 const UPCOMING_EXAMS_QUERY = `
@@ -107,19 +123,41 @@ const UPCOMING_EXAMS_COURSES_ONLY_QUERY = `
   }
 `;
 
-const formatExamDate = (value: string) =>
-  new Intl.DateTimeFormat("en-CA", {
+const formatExamDate = (value: string | null | undefined) => {
+  const parsed = parseExamDate(value);
+
+  if (!parsed) {
+    return "0000-00-00";
+  }
+
+  return new Intl.DateTimeFormat("en-CA", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date(value));
+  }).format(parsed);
+};
 
-const formatExamTime = (value: string) =>
-  new Intl.DateTimeFormat("en-GB", {
+const formatExamTime = (value: string | null | undefined) => {
+  const parsed = parseExamDate(value);
+
+  if (!parsed) {
+    return "00:00";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(value));
+  }).format(parsed);
+};
+
+const getExamDurationLabel = (value: number | null | undefined) => {
+  if (typeof value !== "number" || Number.isNaN(value) || value <= 0) {
+    return "Үргэлжлэх хугацаа тодорхойгүй";
+  }
+
+  return `Нийт ${value} минут үргэлжилнэ`;
+};
 
 const buildUpcomingExamCards = (courses: CourseExamResponse["courses"]) =>
   courses
@@ -132,12 +170,15 @@ const buildUpcomingExamCards = (courses: CourseExamResponse["courses"]) =>
           title: exam.title,
           date: formatExamDate(exam.start_time),
           time: formatExamTime(exam.start_time),
-          startsAt: exam.start_time,
+          duration: exam.duration,
+          hasKnownStartTime: Boolean(parseExamDate(exam.start_time)),
+          startsAt: exam.start_time ?? "",
         })),
     )
     .sort(
       (left, right) =>
-        new Date(left.startsAt).getTime() - new Date(right.startsAt).getTime(),
+        (parseExamDate(left.startsAt)?.getTime() ?? Number.MAX_SAFE_INTEGER) -
+        (parseExamDate(right.startsAt)?.getTime() ?? Number.MAX_SAFE_INTEGER),
     );
 
 export default function UpcomingExams() {
@@ -179,6 +220,8 @@ export default function UpcomingExams() {
               title: exam.title,
               date: exam.date,
               time: exam.time,
+              duration: exam.duration,
+              hasKnownStartTime: exam.hasKnownStartTime,
             }),
           );
 
@@ -215,6 +258,8 @@ export default function UpcomingExams() {
             title: exam.title,
             date: exam.date,
             time: exam.time,
+            duration: exam.duration,
+            hasKnownStartTime: exam.hasKnownStartTime,
           }));
 
         setExams(nextExams);
@@ -256,7 +301,6 @@ export default function UpcomingExams() {
   return (
     <div>
       <h2 className="font-bold pb-7 text-[16px] text-slate-800 whitespace-nowrap transition-colors">
-        {" "}
         Өгөх шалгалтууд
       </h2>
 
@@ -305,7 +349,7 @@ export default function UpcomingExams() {
           {exams.map((exam) => (
             <div
               key={exam.id}
-              className="h-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3"
+              className="h-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4"
             >
               <div className="flex h-full min-h-30 w-full flex-col justify-between gap-4">
                 <div>
@@ -316,27 +360,39 @@ export default function UpcomingExams() {
                   <h3 className="text-[18px] font-semibold text-gray-900">
                     {exam.title}
                   </h3>
+
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    {getExamDurationLabel(exam.duration)}
+                  </p>
                 </div>
 
-                <div className="flex w-full items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 text-gray-500 text-xs">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>{exam.date}</span>
-                    </div>
+                <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2 text-gray-500 text-[10px]">
+                    {exam.hasKnownStartTime ? (
+                      <>
+                        <div className="flex items-center gap-0.5 whitespace-nowrap">
+                          <Calendar className="w-2.5 h-2.5" />
+                          <span>{exam.date}</span>
+                        </div>
 
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{exam.time}</span>
-                    </div>
+                        <div className="flex items-center gap-0.5 whitespace-nowrap">
+                          <Clock className="w-2.5 h-2.5" />
+                          <span>{exam.time}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="whitespace-nowrap">
+                        <span>Эхлэх хугацаа тодорхойгүй</span>
+                      </div>
+                    )}
                   </div>
 
                   <Button
                     type="button"
                     onClick={() => handleOpenWarning(exam)}
-                    className="hover:cursor-pointer flex items-center gap-2 bg-[#006d77]"
+                    className="hover:cursor-pointer flex shrink-0 rounded-md items-center gap-0.5 bg-[#006d77] px-2 py-0 h-6 text-[11px]"
                   >
-                    Шалгалт өгөх <ChevronRight className="w-3 h-3" />
+                    Шалгалт өгөх <ChevronRight className="w-1.5 h-1.5" />
                   </Button>
                 </div>
               </div>
