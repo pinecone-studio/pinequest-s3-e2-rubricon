@@ -17,6 +17,7 @@ const EXAMS_QUERY = `#graphql
       start_time
       end_time
       duration
+      image_url
       course {
         id
         name
@@ -32,6 +33,7 @@ type GqlExam = {
   start_time: string;
   end_time: string;
   duration: number;
+  image_url: string | null;
   course: { id: string; name: string; code: string } | null;
 };
 
@@ -78,6 +80,7 @@ function mapExam(e: GqlExam): ExamCardExam {
     status: examStatus(e.start_time, e.end_time),
     rawStartTime: e.start_time,
     rawDuration: e.duration,
+    image_url: e.image_url,
   };
 }
 

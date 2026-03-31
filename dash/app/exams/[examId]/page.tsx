@@ -41,6 +41,7 @@ const EXAM_QUERY = `#graphql
       questions {
         id
         text
+        image_url
         order_index
         difficulty
         answers {
@@ -74,6 +75,7 @@ type AnswerRow = {
 type QuestionRow = {
   id: string;
   text: string;
+  image_url?: string | null;
   order_index: number | null;
   difficulty: string | null;
   answers: AnswerRow[] | null;
@@ -104,6 +106,7 @@ function answersToDraft(q: QuestionRow): ExamQuestionDraft {
   return {
     id: q.id,
     content: q.text ?? "",
+    image_url: q.image_url ?? null,
     difficulty: ["easy", "medium", "hard"].includes(d) ? d : "medium",
     options,
     correctOptionIndex: correct >= 0 ? correct : 0,
@@ -126,6 +129,19 @@ const diffLabel: Record<string, string> = {
   easy: "Хялбар",
   medium: "Дунд",
   hard: "Хүнд",
+};
+
+const isLikelyImageUrl = (value: string | null | undefined) => {
+  if (!value) return false;
+  const v = value.trim().toLowerCase();
+  return (
+    (v.startsWith("http://") || v.startsWith("https://")) &&
+    (v.endsWith(".png") ||
+      v.endsWith(".jpg") ||
+      v.endsWith(".jpeg") ||
+      v.endsWith(".webp") ||
+      v.includes("res.cloudinary.com"))
+  );
 };
 
 export default function ExamDetailPage() {
@@ -315,6 +331,15 @@ export default function ExamDetailPage() {
                           #{idx + 1} · {diff}
                         </p>
                         <p className="mt-1 font-medium text-slate-900">{q.text}</p>
+                        {q.image_url && (
+                          <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2">
+                            <img
+                              src={q.image_url}
+                              alt="Асуултын зураг"
+                              className="max-h-64 w-full rounded-md object-contain"
+                            />
+                          </div>
+                        )}
                         <ol className="mt-3 space-y-1.5 text-sm text-slate-700">
                           {sorted.map((a, i) => (
                             <li
@@ -324,7 +349,9 @@ export default function ExamDetailPage() {
                               <span className="text-muted-foreground tabular-nums w-5 shrink-0">
                                 {i + 1}.
                               </span>
-                              <span className="flex-1">{a.text}</span>
+                              <span className="flex-1">
+                                {a.text}
+                              </span>
                               {a.is_correct && (
                                 <Check
                                   className="size-4 shrink-0 text-emerald-600"

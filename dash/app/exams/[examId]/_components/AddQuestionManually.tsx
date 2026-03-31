@@ -22,6 +22,7 @@ const ADD_MUTATION = `#graphql
   mutation AddManualQuestion(
     $exam_id: String!
     $content: String!
+    $image_url: String
     $difficulty: QuestionDifficulty!
     $options: [String!]!
     $correctOptionIndex: Int!
@@ -29,6 +30,7 @@ const ADD_MUTATION = `#graphql
     addManualQuestionToExam(
       exam_id: $exam_id
       content: $content
+      image_url: $image_url
       difficulty: $difficulty
       options: $options
       correctOptionIndex: $correctOptionIndex
@@ -42,6 +44,7 @@ const UPDATE_MUTATION = `#graphql
   mutation UpdateManualQuestion(
     $id: String!
     $content: String!
+    $image_url: String
     $difficulty: QuestionDifficulty!
     $options: [String!]!
     $correctOptionIndex: Int!
@@ -49,6 +52,7 @@ const UPDATE_MUTATION = `#graphql
     updateManualQuestion(
       id: $id
       content: $content
+      image_url: $image_url
       difficulty: $difficulty
       options: $options
       correctOptionIndex: $correctOptionIndex
@@ -79,6 +83,7 @@ export function AddQuestionManually({
 }: AddQuestionManuallyProps) {
   const [draft, setDraft] = useState<ExamQuestionDraft>(createEmptyQuestion);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -90,6 +95,10 @@ export function AddQuestionManually({
   }, [open, mode, initialDraft]);
 
   const handleSave = async () => {
+    if (uploading) {
+      toast.error("Зураг upload дуусаагүй байна. Түр хүлээнэ үү.");
+      return;
+    }
     if (!draft.content.trim()) {
       toast.error("Асуултын текст оруулна уу.");
       return;
@@ -107,6 +116,7 @@ export function AddQuestionManually({
         await graphqlRequest(UPDATE_MUTATION, {
           id: questionId,
           content: draft.content,
+          image_url: draft.image_url ?? null,
           difficulty: draft.difficulty,
           options: [...draft.options],
           correctOptionIndex: draft.correctOptionIndex,
@@ -116,6 +126,7 @@ export function AddQuestionManually({
         await graphqlRequest(ADD_MUTATION, {
           exam_id: examId,
           content: draft.content,
+          image_url: draft.image_url ?? null,
           difficulty: draft.difficulty,
           options: [...draft.options],
           correctOptionIndex: draft.correctOptionIndex,
@@ -151,6 +162,7 @@ export function AddQuestionManually({
             onChange={setDraft}
             onRemove={() => {}}
             canRemove={false}
+            onUploadStateChange={setUploading}
           />
         </div>
         <div className="flex justify-end gap-2 border-t border-border/80 bg-muted/20 px-4 py-3 shrink-0">
@@ -162,7 +174,7 @@ export function AddQuestionManually({
           <Button
             type="button"
             className="bg-[#006fee] hover:bg-[#005bc4] text-white"
-            disabled={saving}
+            disabled={saving || uploading}
             onClick={() => void handleSave()}
           >
             {saving ? (

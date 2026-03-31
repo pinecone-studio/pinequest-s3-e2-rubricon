@@ -8,6 +8,7 @@ enum QuestionDifficulty {
   type Question {
     id: String
     text: String
+    image_url: String
     type: String
     difficulty: QuestionDifficulty
     category: String
@@ -26,6 +27,7 @@ enum QuestionDifficulty {
       type: String!
       difficulty: QuestionDifficulty!
       category: String
+      image_url: String
     ): Question
 
     updateQuestion(
@@ -34,6 +36,7 @@ enum QuestionDifficulty {
       type: String
       difficulty: QuestionDifficulty
       category: String
+      image_url: String
     ): Question
 
     deleteQuestion(id: String!): Boolean

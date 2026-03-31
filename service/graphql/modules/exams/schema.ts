@@ -17,6 +17,7 @@ enum QuestionDifficulty {
     questions: [Question]
     course: Course
     type: String
+    image_url: String
   }
 
   extend type Query {
@@ -26,6 +27,7 @@ enum QuestionDifficulty {
 
   input ManualExamQuestionInput {
     content: String!
+    image_url: String
     difficulty: QuestionDifficulty!
     options: [String!]!
     correctOptionIndex: Int!
@@ -46,6 +48,7 @@ enum QuestionDifficulty {
       end_time: String!
       duration: Int!
       type: String!
+      image_url: String
     ): Exam
     createExamWithQuestions(
       course_id: String!
@@ -56,6 +59,7 @@ enum QuestionDifficulty {
       duration: Int!
       type: String!
       questions: [CreateQuestionInput!]!
+      image_url: String
     ): Exam
     saveExamManual(
       course_id: String!
@@ -66,6 +70,7 @@ enum QuestionDifficulty {
       duration: Int!
       type: String!
       questions: [ManualExamQuestionInput!]!
+      image_url: String
     ): Exam
     updateExam(
       id: String!
@@ -76,12 +81,14 @@ enum QuestionDifficulty {
       end_time: String
       duration: Int
       type: String
+      image_url: String
     ): Exam
     deleteExam(id: String!): Boolean
 
     addManualQuestionToExam(
       exam_id: String!
       content: String!
+      image_url: String
       difficulty: QuestionDifficulty!
       options: [String!]!
       correctOptionIndex: Int!
@@ -90,6 +97,7 @@ enum QuestionDifficulty {
     updateManualQuestion(
       id: String!
       content: String!
+      image_url: String
       difficulty: QuestionDifficulty!
       options: [String!]!
       correctOptionIndex: Int!

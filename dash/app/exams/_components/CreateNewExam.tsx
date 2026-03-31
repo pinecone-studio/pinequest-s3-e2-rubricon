@@ -22,9 +22,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { graphqlRequest } from "@/lib/graphql";
-import { Loader2, Plus, Sparkles } from "lucide-react";
+import { Loader2, Plus, Sparkles, ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { AIQuestionWizard } from "../[examId]/_components/AIQuestionWizard";
+import { uploadImageToCloudinary } from "@/lib/utils/imageUpload";
 
 const COURSES_QUERY = `#graphql
   query CoursesForExam {
@@ -45,6 +46,7 @@ const CREATE_EXAM = `#graphql
     $end_time: String!
     $duration: Int!
     $type: String!
+    $image_url: String
   ) {
     createExam(
       course_id: $course_id
@@ -54,6 +56,7 @@ const CREATE_EXAM = `#graphql
       end_time: $end_time
       duration: $duration
       type: $type
+      image_url: $image_url
     ) {
       id
       title
@@ -83,7 +86,9 @@ export const CreateNewExam = () => {
   const [examDate, setExamDate] = useState("");
   const [examTime, setExamTime] = useState("09:00");
   const [durationMinutes, setDurationMinutes] = useState("60");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const loadCourses = useCallback(async () => {
     setCoursesLoading(true);
@@ -113,6 +118,7 @@ export const CreateNewExam = () => {
     setExamDate("");
     setExamTime("09:00");
     setDurationMinutes("60");
+    setImageUrl(null);
   };
 
   const buildStartEndIso = () => {
@@ -144,6 +150,10 @@ export const CreateNewExam = () => {
       toast.error("Курс сонгоно уу.");
       return;
     }
+    if (uploading) {
+      toast.error("Зураг хуулж байна. Түр хүлээнэ үү.");
+      return;
+    }
 
     let timing: { start_time: string; end_time: string; duration: number };
     try {
@@ -163,6 +173,7 @@ export const CreateNewExam = () => {
         end_time: timing.end_time,
         duration: timing.duration,
         type: "mock",
+        image_url: imageUrl,
       });
       const id = data.createExam?.id;
       if (!id) throw new Error("Шалгалтын ID ирээгүй.");
@@ -316,6 +327,48 @@ export const CreateNewExam = () => {
                     <SelectItem value="180">3 цаг</SelectItem>
                   </SelectContent>
                 </Select>
+              </Field>
+              <Field>
+                <Label>Шалгалтын ковер зураг (заавал биш)</Label>
+                <div className="mt-2 flex items-center gap-4">
+                  {imageUrl ? (
+                    <div className="relative size-20 rounded-lg border overflow-hidden">
+                      <img src={imageUrl} alt="Exam cover" className="size-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl(null)}
+                        className="absolute top-1 right-1 bg-white/80 rounded-full p-0.5 hover:bg-white"
+                      >
+                        <X size={14} className="text-red-600" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center size-20 rounded-lg border border-dashed border-slate-300 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
+                      <ImageIcon className="size-6 text-slate-400" />
+                      <span className="text-[10px] text-slate-500 mt-1">Зураг</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={uploading}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploading(true);
+                          try {
+                            const url = await uploadImageToCloudinary(file);
+                            setImageUrl(url);
+                          } catch (err) {
+                            toast.error("Зураг хуулахад алдаа гарлаа.");
+                          } finally {
+                            setUploading(false);
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                  {uploading && <Loader2 className="size-5 animate-spin text-[#006fee]" />}
+                </div>
               </Field>
             </FieldGroup>
           )}
