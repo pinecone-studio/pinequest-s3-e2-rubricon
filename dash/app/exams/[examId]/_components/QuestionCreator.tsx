@@ -58,6 +58,12 @@ const ADD_MC_MUTATION = `#graphql
   }
 `;
 
+type ParsedQuestion = {
+  text?: string;
+  options?: string[];
+};
+
+function parsedToDraft(p: ParsedQuestion): ExamQuestionDraft {
 const ADD_OPEN_ENDED_MUTATION = `#graphql
   mutation AddOpenEndedQuestion(
     $exam_id: String!
@@ -172,8 +178,8 @@ export function QuestionCreator({
         setRawText(data.aiCorrected || "");
         setActiveTab("text");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Оруулж чадсангүй");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Оруулж чадсангүй");
     } finally {
       setLoadingOcr(false);
     }

@@ -1,7 +1,6 @@
 "use client";
 
 import DashboardPage from "./dashboard/page";
-import StudentsPage from "./students/page";
 
 const Page = () => {
   return (

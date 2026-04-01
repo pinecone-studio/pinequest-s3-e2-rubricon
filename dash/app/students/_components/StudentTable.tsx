@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
@@ -9,19 +10,23 @@ import {
   Mail,
   Download,
 } from "lucide-react";
-import { Student } from "../type";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogTitle,
+  DialogHeader,
 } from "@/components/ui/dialog";
+
+import { Student } from "../type";
 
 interface StudentTableProps {
   students: Student[];
@@ -35,10 +40,11 @@ const trendMeta = {
 
 const getInitials = (name: string) =>
   name
-    .split(" ")
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase();
+    ?.split(" ")
+    ?.filter(Boolean)
+    ?.map((p) => p[0])
+    ?.join("")
+    ?.toUpperCase() || "";
 
 const StudentTable = ({ students }: StudentTableProps) => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -74,24 +80,28 @@ const StudentTable = ({ students }: StudentTableProps) => {
 
           <tbody>
             {students.map((s) => {
-              const TrendIcon = trendMeta[s.trend].icon;
-
               const isMissing = s.examsTaken === 0;
               const isLow = s.averageScore < 70 && !isMissing;
+
+              const safeScore = Math.min(
+                Math.max(s.averageScore, 0),
+                100
+              );
 
               return (
                 <tr
                   key={s.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleView(s)}
                   onKeyDown={(e) => handleKey(e, s)}
-                  tabIndex={0}
                   className={`cursor-pointer transition
                     ${
                       isMissing
-                        ? "bg-red-50 hover:bg-red-100"
-                        : isLow
-                        ? "bg-yellow-50 hover:bg-yellow-100"
-                        : "hover:bg-gray-50"
+                        // ? "bg-red-50 hover:bg-red-100"
+                        // : isLow
+                        // ? "bg-yellow-50 hover:bg-yellow-100"
+                        // : "hover:bg-gray-50"
                     }`}
                 >
                   {/* NAME */}
@@ -122,12 +132,12 @@ const StudentTable = ({ students }: StudentTableProps) => {
                               ? "text-red-500"
                               : isLow
                               ? "text-yellow-600"
-                              : s.averageScore > 80
+                              : safeScore > 80
                               ? "text-green-600"
                               : "text-blue-600"
                           }`}
                       >
-                        {isMissing ? "—" : `${s.averageScore}%`}
+                        {isMissing ? "—" : `${safeScore}%`}
                       </span>
 
                       {!isMissing && (
@@ -139,7 +149,7 @@ const StudentTable = ({ students }: StudentTableProps) => {
                                   ? "bg-yellow-500"
                                   : "bg-blue-500"
                               }`}
-                            style={{ width: `${s.averageScore}%` }}
+                            style={{ width: `${safeScore}%` }}
                           />
                         </div>
                       )}
@@ -149,8 +159,8 @@ const StudentTable = ({ students }: StudentTableProps) => {
                   {/* EXAMS */}
                   <td className="px-6 py-4 text-sm">
                     {isMissing ? (
-                      <span className="text-red-500 font-medium">
-                        Шалгалт өгөөгүй
+                      <span className="font-medium">
+                        -
                       </span>
                     ) : isLow ? (
                       <span className="text-yellow-600 font-medium">
@@ -160,12 +170,6 @@ const StudentTable = ({ students }: StudentTableProps) => {
                       `${s.examsTaken} шалгалт`
                     )}
                   </td>
-
-                  {/* TREND */}
-                  <td className="px-6 py-4">
-                    <TrendIcon className={trendMeta[s.trend].className} />
-                  </td>
-
                   {/* LAST */}
                   <td className="px-6 py-4 text-gray-500">
                     {s.lastActive}
@@ -207,17 +211,15 @@ const StudentTable = ({ students }: StudentTableProps) => {
         )}
       </div>
 
-      {/* 🔥 DETAIL MODAL */}
+      {/* DETAIL MODAL */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl space-y-4">
-
-          <DialogTitle>
-            {selectedStudent?.name}
-          </DialogTitle>
-
-          <DialogDescription>
-            {selectedStudent?.email}
-          </DialogDescription>
+          <DialogHeader>
+            <DialogTitle>{selectedStudent?.name}</DialogTitle>
+            <DialogDescription>
+              {selectedStudent?.email}
+            </DialogDescription>
+          </DialogHeader>
 
           {selectedStudent && (
             <div className="space-y-4">
@@ -266,7 +268,7 @@ const StudentTable = ({ students }: StudentTableProps) => {
                 )}
 
               {/* EXAM HISTORY */}
-              {selectedStudent.examHistory.length > 0 && (
+              {selectedStudent.examHistory?.length > 0 && (
                 <div>
                   <p className="font-medium mb-2">
                     Шалгалтын түүх
@@ -301,7 +303,6 @@ const StudentTable = ({ students }: StudentTableProps) => {
 
             </div>
           )}
-
         </DialogContent>
       </Dialog>
     </>
