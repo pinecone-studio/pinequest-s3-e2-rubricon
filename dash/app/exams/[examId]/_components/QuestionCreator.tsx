@@ -23,7 +23,10 @@ import {
   AlignLeft,
   ImageIcon,
   X,
+  Sparkles,
+  ListChecks,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { ExamQuestionCard } from "../../_components/ExamQuestionCard";
 import {
@@ -58,11 +61,6 @@ const ADD_MC_MUTATION = `#graphql
   }
 `;
 
-type ParsedQuestion = {
-  text?: string;
-  options?: string[];
-};
-
 const ADD_OPEN_ENDED_MUTATION = `#graphql
   mutation AddOpenEndedQuestion(
     $exam_id: String!
@@ -83,7 +81,10 @@ const ADD_OPEN_ENDED_MUTATION = `#graphql
   }
 `;
 
-// ─── Helpers ───────────────────────────────────────────────────────────────
+type ParsedQuestion = {
+  text?: string;
+  options?: string[];
+};
 
 function parsedToDraft(p: ParsedQuestion): ExamQuestionDraft {
   const options = ["", "", "", "", ""] as [
@@ -108,8 +109,6 @@ function parsedToDraft(p: ParsedQuestion): ExamQuestionDraft {
   };
 }
 
-// ─── Main Component ────────────────────────────────────────────────────────
-
 export function QuestionCreator({
   examId,
   onSaved,
@@ -118,8 +117,6 @@ export function QuestionCreator({
   onSaved: () => void;
 }) {
   const [activeTab, setActiveTab] = useState("manual");
-
-  // Multiple-choice draft state
   const [drafts, setDrafts] = useState<ExamQuestionDraft[]>([
     createEmptyQuestion(),
   ]);
@@ -129,11 +126,9 @@ export function QuestionCreator({
   >({});
   const hasUploading = Object.values(uploadingByDraft).some(Boolean);
 
-  // OCR / text-parse state
   const [loadingOcr, setLoadingOcr] = useState(false);
   const [rawText, setRawText] = useState("");
 
-  // Open-ended state
   const [oeContent, setOeContent] = useState("");
   const [oeDifficulty, setOeDifficulty] = useState("medium");
   const [oeMaxPoints, setOeMaxPoints] = useState("1");
@@ -141,10 +136,7 @@ export function QuestionCreator({
   const [oeUploading, setOeUploading] = useState(false);
   const [oeSaving, setOeSaving] = useState(false);
 
-  // ── Multiple-choice handlers ──────────────────────────────────────────
-
   const handleAddDraft = () => setDrafts([...drafts, createEmptyQuestion()]);
-
   const handleRemoveDraft = (index: number) => {
     const toRemove = drafts[index];
     setDrafts(drafts.filter((_, i) => i !== index));
@@ -174,7 +166,10 @@ export function QuestionCreator({
     try {
       const response = await fetch(
         "https://tesseract-provider-production.up.railway.app/ocr",
-        { method: "POST", body: formData },
+        {
+          method: "POST",
+          body: formData,
+        },
       );
       if (!response.ok) throw new Error("Сервертэй холбогдоход алдаа гарлаа.");
       const data = await response.json();
@@ -217,19 +212,13 @@ export function QuestionCreator({
 
   const handleSaveAll = async () => {
     if (hasUploading) {
-      toast.error(
-        "Зураг upload дуусаагүй байна. Түр хүлээгээд дахин оролдоно уу.",
-      );
+      toast.error("Зураг upload дуусаагүй байна.");
       return;
     }
-    for (let j = 0; j < drafts.length; j++) {
-      const d = drafts[j];
+    for (const d of drafts) {
       if (!d.content.trim()) {
-        toast.error(`Асуулт ${j + 1}-н текстийг оруулна уу.`);
+        toast.error("Бүх асуултын текстийг оруулна уу.");
         return;
-      }
-      for (let i = 0; i < 5; i++) {
-        if (!d.options[i]?.trim()) d.options[i] = "-";
       }
     }
     setSaving(true);
@@ -256,12 +245,9 @@ export function QuestionCreator({
   };
 
   const clearDrafts = () => {
-    if (confirm("Бүх ноорог асуултыг устгах уу?")) {
+    if (confirm("Бүх ноорог асуултыг устгах уу?"))
       setDrafts([createEmptyQuestion()]);
-    }
   };
-
-  // ── Open-ended handlers ───────────────────────────────────────────────
 
   const handleSaveOpenEnded = async () => {
     if (!oeContent.trim()) {
@@ -269,10 +255,6 @@ export function QuestionCreator({
       return;
     }
     const pts = parseInt(oeMaxPoints, 10);
-    if (!Number.isFinite(pts) || pts < 1) {
-      toast.error("Оноо 1-ээс дээш байх ёстой.");
-      return;
-    }
     setOeSaving(true);
     try {
       await graphqlRequest(ADD_OPEN_ENDED_MUTATION, {
@@ -284,8 +266,6 @@ export function QuestionCreator({
       });
       toast.success("Задгай асуулт нэмэгдлээ.");
       setOeContent("");
-      setOeDifficulty("medium");
-      setOeMaxPoints("1");
       setOeImageUrl(null);
       onSaved();
     } catch (e) {
@@ -295,326 +275,289 @@ export function QuestionCreator({
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────
-
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100">
-        <h3 className="text-base font-semibold text-slate-900">Асуулт нэмэх</h3>
-        <p className="text-sm text-slate-500 mt-0.5">
-          Тест (A/B/C/D/E), задгай даалгавар, зургаас таних, эсвэл текстээс
-          хөрвүүлэх
-        </p>
+    <div className="overflow-hidden rounded-[32px] border border-slate-200/60 bg-white/50 backdrop-blur-md transition-all hover:bg-white hover:shadow-2xl hover:shadow-slate-200/40">
+      <div className="border-b border-slate-100 px-8 py-6">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-200">
+            <Plus size={20} />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-slate-900">Асуулт нэмэх</h3>
+            <p className="text-xs font-medium text-slate-500">
+              Шалгалтын агуулгыг баяжуулж, оюутнуудад сорилт үүсгээрэй.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="p-6">
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="w-full mb-6"
-        >
-          <TabsList className="grid w-full grid-cols-4 bg-slate-100/80 p-1 rounded-xl h-auto">
-            <TabsTrigger
-              value="manual"
-              className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
-            >
-              <Plus className="size-4 mr-1.5" />
-              Тест
-            </TabsTrigger>
-            <TabsTrigger
-              value="open"
-              className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
-            >
-              <AlignLeft className="size-4 mr-1.5" />
-              Задгай
-            </TabsTrigger>
-            <TabsTrigger
-              value="ocr"
-              className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
-            >
-              <UploadCloud className="size-4 mr-1.5" />
-              Зургаас
-            </TabsTrigger>
-            <TabsTrigger
-              value="text"
-              className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
-            >
-              <FileText className="size-4 mr-1.5" />
-              Текстээс
-            </TabsTrigger>
+      <div className="p-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-8 grid h-12 w-full grid-cols-4 rounded-2xl bg-slate-100/50 p-1">
+            {[
+              { id: "manual", label: "Тест", icon: ListChecks },
+              { id: "open", label: "Задгай", icon: AlignLeft },
+              { id: "ocr", label: "Зургаас", icon: Sparkles },
+              { id: "text", label: "Текстээс", icon: FileText },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className="flex items-center gap-2 rounded-xl text-xs font-bold transition-all data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-sm"
+              >
+                <tab.icon size={14} />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </TabsTrigger>
+            ))}
           </TabsList>
 
-          {/* ── Open-Ended Tab ── */}
-          <TabsContent value="open" className="mt-4">
-            <div className="space-y-4">
-              <div>
-                <Label className="text-sm font-medium text-slate-700">
-                  Асуултын текст
-                </Label>
-                <Textarea
-                  className="mt-1 resize-none min-h-25 rounded-xl border-slate-200 text-sm"
-                  placeholder="Оюутнаас бичгээр хариулт авах асуултаа бичнэ үү...&#10;Жишээ: Монгол улсын нийслэл хотын тухай товч бичнэ үү."
-                  value={oeContent}
-                  onChange={(e) => setOeContent(e.target.value)}
-                  disabled={oeSaving}
-                  rows={4}
-                />
-              </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <TabsContent value="open" className="mt-0">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      Асуултын мэдээлэл
+                    </Label>
+                    <Textarea
+                      className="min-h-30 resize-none rounded-3xl border-slate-200 bg-white p-5 text-sm transition-all focus:border-blue-500 focus:ring-0"
+                      placeholder="Оюутнаас бичгээр хариулт авах асуултаа энд бичнэ үү..."
+                      value={oeContent}
+                      onChange={(e) => setOeContent(e.target.value)}
+                      disabled={oeSaving}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-sm font-medium text-slate-700">
-                    Хэцүүн
-                  </Label>
-                  <Select
-                    value={oeDifficulty}
-                    onValueChange={setOeDifficulty}
-                    disabled={oeSaving}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="easy">Хялбар</SelectItem>
-                      <SelectItem value="medium">Дунд</SelectItem>
-                      <SelectItem value="hard">Хүнд</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-slate-700">
-                    Дээд оноо
-                  </Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={100}
-                    className="mt-1"
-                    value={oeMaxPoints}
-                    onChange={(e) => setOeMaxPoints(e.target.value)}
-                    disabled={oeSaving}
-                    placeholder="1"
-                  />
-                </div>
-              </div>
-
-              {/* Image upload */}
-              <div>
-                <Label className="text-sm font-medium text-slate-700">
-                  Зураг{" "}
-                  <span className="text-slate-400 font-normal">
-                    (заавал биш)
-                  </span>
-                </Label>
-                <div className="mt-2 flex items-center gap-3">
-                  {oeImageUrl ? (
-                    <div className="relative size-24 rounded-xl border border-slate-200 overflow-hidden shadow-sm group">
-                      <img
-                        src={oeImageUrl}
-                        alt=""
-                        className="size-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setOeImageUrl(null)}
-                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                        Хүндрэл
+                      </Label>
+                      <Select
+                        value={oeDifficulty}
+                        onValueChange={setOeDifficulty}
+                        disabled={oeSaving}
                       >
-                        <X size={16} className="text-white" />
-                      </button>
+                        <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl">
+                          <SelectItem value="easy">Хялбар</SelectItem>
+                          <SelectItem value="medium">Дунд</SelectItem>
+                          <SelectItem value="hard">Хүнд</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  ) : (
-                    <label className="flex flex-col items-center justify-center size-24 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-300 hover:bg-blue-50/60 transition-all">
-                      <ImageIcon className="size-5 text-slate-400" />
-                      <span className="text-[10px] text-slate-500 mt-1 font-medium">
-                        Зураг нэмэх
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        disabled={oeUploading || oeSaving}
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          setOeUploading(true);
-                          try {
-                            const url = await uploadImageToCloudinary(file);
-                            setOeImageUrl(url);
-                          } catch {
-                            toast.error("Зураг хуулахад алдаа гарлаа.");
-                          } finally {
-                            setOeUploading(false);
-                          }
-                        }}
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                        Дээд оноо
+                      </Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        className="h-12 rounded-2xl border-slate-200 bg-white transition-all focus:border-blue-500 focus:ring-0"
+                        value={oeMaxPoints}
+                        onChange={(e) => setOeMaxPoints(e.target.value)}
+                        disabled={oeSaving}
                       />
-                    </label>
-                  )}
-                  {oeUploading && (
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                      <Loader2 className="size-4 animate-spin text-blue-500" />
-                      <span>Хуулж байна...</span>
                     </div>
-                  )}
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                        Зураг
+                      </Label>
+                      <div className="flex gap-3">
+                        {oeImageUrl ? (
+                          <div className="group relative size-12 overflow-hidden rounded-xl border border-slate-200 shadow-sm transition-transform active:scale-95">
+                            <img
+                              src={oeImageUrl}
+                              alt=""
+                              className="size-full object-cover"
+                            />
+                            <button
+                              onClick={() => setOeImageUrl(null)}
+                              className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100"
+                            >
+                              <X size={14} className="text-white" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 bg-white text-[11px] font-bold text-slate-400 transition-all hover:border-blue-300 hover:bg-blue-50/20 active:scale-95">
+                            <ImageIcon size={14} />
+                            <span>Зураг</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={oeUploading || oeSaving}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setOeUploading(true);
+                                try {
+                                  const url =
+                                    await uploadImageToCloudinary(file);
+                                  setOeImageUrl(url);
+                                } finally {
+                                  setOeUploading(false);
+                                }
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <Button
+                      onClick={() => void handleSaveOpenEnded()}
+                      disabled={oeSaving || oeUploading || !oeContent.trim()}
+                      className="h-12 rounded-2xl bg-slate-900 px-8 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-slate-200 transition-all hover:-translate-y-0.5 hover:bg-black active:translate-y-0"
+                    >
+                      {oeSaving ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="mr-2" size={16} />
+                      )}
+                      {oeSaving ? "Хадгалж байна..." : "Асуултыг нэмэх"}
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              </TabsContent>
 
-              {/* Info note */}
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-100">
-                <AlignLeft className="size-4 text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-700 leading-relaxed">
-                  Задгай даалгавраар оюутнуудаас бичгээр хариулт авна. Хариулт
-                  нь автоматаар шалгагдахгүй — багш гараар дүгнэлт өгнө.
-                </p>
-              </div>
+              <TabsContent value="ocr" className="mt-0">
+                <div className="flex flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-slate-200 bg-slate-50/50 py-16 text-center transition-all hover:border-blue-300 hover:bg-blue-50/30">
+                  <div className="mb-4 flex size-16 items-center justify-center rounded-3xl bg-white text-blue-600 shadow-md">
+                    <Sparkles size={32} />
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900">
+                    Зургаас асуулт таних
+                  </h4>
+                  <p className="mt-1 text-sm font-medium text-slate-500">
+                    Шалгалтын материалын зургийг оруулан AI-аар таниулна.
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleOcrUpload}
+                    className="hidden"
+                    id="creator-ocr"
+                    disabled={loadingOcr}
+                  />
+                  <label htmlFor="creator-ocr">
+                    <Button
+                      asChild
+                      size="lg"
+                      className="mt-8 rounded-2xl bg-blue-600 px-8 font-bold shadow-lg shadow-blue-100 hover:bg-blue-700"
+                    >
+                      <span>
+                        {loadingOcr ? (
+                          <Loader2 className="mr-2 animate-spin" />
+                        ) : (
+                          <UploadCloud className="mr-2" />
+                        )}{" "}
+                        {loadingOcr ? "Уншиж байна..." : "Зураг сонгох"}
+                      </span>
+                    </Button>
+                  </label>
+                </div>
+              </TabsContent>
 
-              <div className="flex justify-end pt-2">
-                <Button
-                  className="bg-blue-600 hover:bg-blue-700 text-white gap-2 px-6"
-                  onClick={() => void handleSaveOpenEnded()}
-                  disabled={oeSaving || oeUploading || !oeContent.trim()}
-                >
-                  {oeSaving ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="size-4" />
-                  )}
-                  {oeSaving ? "Хадгалж байна..." : "Асуулт нэмэх"}
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
+              <TabsContent value="text" className="mt-0">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      Текст өгөгдөл
+                    </Label>
+                    <Textarea
+                      placeholder={"1. Асуулт?\na) Хариулт 1\nb) Хариулт 2..."}
+                      className="min-h-55 resize-none rounded-3xl border-slate-200 p-6 text-sm leading-relaxed focus:border-blue-500 focus:ring-0"
+                      value={rawText}
+                      onChange={(e) => setRawText(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleTextParse}
+                      disabled={!rawText.trim()}
+                      className="h-11 rounded-xl bg-slate-900 px-6 text-xs font-bold transition-transform hover:-translate-y-px"
+                    >
+                      <FileText className="mr-2" size={14} /> Асуулт болгох
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
 
-          {/* ── OCR Tab ── */}
-          <TabsContent value="ocr" className="mt-4">
-            <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-8 text-center hover:border-blue-300 hover:bg-blue-50/40 transition-colors">
-              <UploadCloud className="size-10 text-slate-400 mx-auto mb-3" />
-              <p className="font-medium text-slate-700 mb-1">
-                Зургаас асуулт таних
-              </p>
-              <p className="text-sm text-slate-500 mb-4">
-                Шалгалтын материалын зургийг оруулахад автоматаар асуулт болгоно
-              </p>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleOcrUpload}
-                className="hidden"
-                id="ocr-upload"
-                disabled={loadingOcr}
-              />
-              <label htmlFor="ocr-upload">
-                <Button
-                  asChild
-                  disabled={loadingOcr}
-                  size="sm"
-                  className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <span>
-                    {loadingOcr && (
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                    )}
-                    {loadingOcr ? "Тайлж байна..." : "Зураг сонгох"}
-                  </span>
-                </Button>
-              </label>
-            </div>
-          </TabsContent>
+              <TabsContent value="manual" className="mt-0">
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    {drafts.map((draft, idx) => (
+                      <ExamQuestionCard
+                        key={draft.id}
+                        index={idx}
+                        question={draft}
+                        onChange={(next) => handleChangeDraft(idx, next)}
+                        onRemove={() => handleRemoveDraft(idx)}
+                        canRemove={drafts.length > 1}
+                        onUploadStateChange={(isUploading) =>
+                          setUploadingByDraft((prev) => ({
+                            ...prev,
+                            [draft.id]: isUploading,
+                          }))
+                        }
+                      />
+                    ))}
+                  </div>
 
-          {/* ── Text Tab ── */}
-          <TabsContent value="text" className="mt-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm font-medium text-slate-700 mb-2">
-                Дугаарласан асуулт болон хариултуудаа энд бичнэ үү:
-              </p>
-              <Textarea
-                placeholder={
-                  "1. Монгол улсын нийслэл?\na) Улаанбаатар\nb) Дархан\nc) Эрдэнэт\nd) Ховд\ne) Дорнод\n\n2. Дараагийн асуулт..."
-                }
-                className="min-h-45 bg-white text-sm resize-none border-slate-200 rounded-lg"
-                value={rawText}
-                onChange={(e) => setRawText(e.target.value)}
-              />
-              <div className="flex justify-end mt-3">
-                <Button
-                  onClick={handleTextParse}
-                  disabled={!rawText.trim()}
-                  size="sm"
-                  className="gap-2 bg-slate-800 hover:bg-slate-900 text-white"
-                >
-                  <FileText className="size-4" />
-                  Асуулт болгох
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* ── Manual hidden placeholder ── */}
-          <TabsContent value="manual" className="mt-0" />
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pt-6">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={handleAddDraft}
+                        className="flex-1 rounded-2xl border-2 border-dashed border-slate-200 bg-white font-bold text-slate-500 hover:border-blue-400 hover:bg-blue-50 active:scale-95 sm:flex-none"
+                      >
+                        <Plus className="mr-2" size={16} /> Асуулт нэмэх
+                      </Button>
+                      {drafts.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          onClick={clearDrafts}
+                          className="size-11 rounded-2xl text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                        >
+                          <Trash2 size={18} />
+                        </Button>
+                      )}
+                    </div>
+                    <Button
+                      onClick={() => void handleSaveAll()}
+                      disabled={
+                        saving ||
+                        hasUploading ||
+                        drafts.every((d) => !d.content.trim())
+                      }
+                      className="h-12 w-full rounded-2xl bg-blue-600 px-8 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-blue-200 transition-all hover:-translate-y-0.5 hover:bg-blue-700 sm:w-auto"
+                    >
+                      {saving ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="mr-2" size={16} />
+                      )}
+                      {saving
+                        ? "Хадгалж байна..."
+                        : `Бүх (${drafts.length}) асуултыг хадгалах`}
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+            </motion.div>
+          </AnimatePresence>
         </Tabs>
-
-        {/* ── MC Draft Questions (only shown on manual/import tabs) ── */}
-        {(activeTab === "manual" ||
-          activeTab === "ocr" ||
-          activeTab === "text") && (
-          <div className="space-y-4">
-            {drafts.map((draft, idx) => (
-              <ExamQuestionCard
-                key={draft.id}
-                index={idx}
-                question={draft}
-                onChange={(next) => handleChangeDraft(idx, next)}
-                onRemove={() => handleRemoveDraft(idx)}
-                canRemove={drafts.length > 1}
-                onUploadStateChange={(isUploading) =>
-                  setUploadingByDraft((prev) => ({
-                    ...prev,
-                    [draft.id]: isUploading,
-                  }))
-                }
-              />
-            ))}
-
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 border-dashed border-2 hover:bg-slate-50 text-slate-600 w-full sm:w-auto"
-                  onClick={handleAddDraft}
-                >
-                  <Plus className="size-4" />
-                  Асуулт нэмэх
-                </Button>
-                {drafts.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    title="Бүгдийг устгах"
-                    className="h-9 w-9 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0"
-                    onClick={clearDrafts}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                )}
-              </div>
-
-              <Button
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white gap-2 px-6"
-                onClick={() => void handleSaveAll()}
-                disabled={saving || hasUploading || drafts.length === 0}
-              >
-                {saving ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="size-4" />
-                )}
-                {saving ? "Хадгалж байна..." : `Хадгалах (${drafts.length})`}
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -22,7 +22,10 @@ import { toast } from "sonner";
 import { AddQuestionManually } from "./_components/AddQuestionManually";
 import { QuestionCreator } from "./_components/QuestionCreator";
 import { EditOpenEndedDialog } from "./_components/EditOpenEndedDialog";
-import type { ExamDifficulty, ExamQuestionDraft } from "../_components/exam-draft-types";
+import type {
+  ExamDifficulty,
+  ExamQuestionDraft,
+} from "../_components/exam-draft-types";
 
 const EXAM_QUERY = `#graphql
   query ExamDetail($id: String!) {
@@ -97,10 +100,12 @@ type ExamDetail = {
 
 function answersToDraft(q: QuestionRow): ExamQuestionDraft {
   const sorted = [...(q.answers ?? [])].sort((a, b) =>
-    a.id && b.id ? a.id.localeCompare(b.id) : 0
+    a.id && b.id ? a.id.localeCompare(b.id) : 0,
   );
   const options = ["", "", "", "", ""] as ExamQuestionDraft["options"];
-  sorted.slice(0, 5).forEach((a, i) => { options[i] = a.text; });
+  sorted.slice(0, 5).forEach((a, i) => {
+    options[i] = a.text;
+  });
   const correct = sorted.findIndex((a) => a.is_correct);
   const d = (q.difficulty ?? "medium") as ExamDifficulty;
   return {
@@ -115,20 +120,31 @@ function answersToDraft(q: QuestionRow): ExamQuestionDraft {
 
 function formatDate(iso: string) {
   try {
-    return new Date(iso).toLocaleDateString("mn-MN", { year: "numeric", month: "short", day: "numeric" });
-  } catch { return iso; }
+    return new Date(iso).toLocaleDateString("mn-MN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return iso;
+  }
 }
 
 function formatTime(iso: string) {
   try {
-    return new Date(iso).toLocaleTimeString("mn-MN", { hour: "2-digit", minute: "2-digit" });
-  } catch { return iso; }
+    return new Date(iso).toLocaleTimeString("mn-MN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
 }
 
 const diffConfig: Record<string, { label: string; cls: string }> = {
-  easy:   { label: "Хялбар", cls: "bg-emerald-50 text-emerald-700" },
-  medium: { label: "Дунд",   cls: "bg-amber-50 text-amber-700" },
-  hard:   { label: "Хүнд",   cls: "bg-red-50 text-red-700" },
+  easy: { label: "Хялбар", cls: "bg-emerald-50 text-emerald-700" },
+  medium: { label: "Дунд", cls: "bg-amber-50 text-amber-700" },
+  hard: { label: "Хүнд", cls: "bg-red-50 text-red-700" },
 };
 
 export default function ExamDetailPage() {
@@ -142,7 +158,9 @@ export default function ExamDetailPage() {
   const [editDraft, setEditDraft] = useState<ExamQuestionDraft | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   // Open-ended edit
-  const [editOpenQuestion, setEditOpenQuestion] = useState<QuestionRow | null>(null);
+  const [editOpenQuestion, setEditOpenQuestion] = useState<QuestionRow | null>(
+    null,
+  );
   // Deleting
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingExam, setDeletingExam] = useState(false);
@@ -151,7 +169,10 @@ export default function ExamDetailPage() {
     if (!examId) return;
     setLoading(true);
     try {
-      const data = await graphqlRequest<{ exam: ExamDetail | null }>(EXAM_QUERY, { id: examId });
+      const data = await graphqlRequest<{ exam: ExamDetail | null }>(
+        EXAM_QUERY,
+        { id: examId },
+      );
       setExam(data.exam);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Ачаалахад алдаа.");
@@ -161,13 +182,18 @@ export default function ExamDetailPage() {
     }
   }, [examId]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const openEditMC = (q: QuestionRow) => {
     setEditId(q.id);
     setEditDraft(answersToDraft(q));
   };
-  const closeEditMC = () => { setEditId(null); setEditDraft(null); };
+  const closeEditMC = () => {
+    setEditId(null);
+    setEditDraft(null);
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Энэ асуултыг устгах уу?")) return;
@@ -196,23 +222,24 @@ export default function ExamDetailPage() {
     }
   };
 
-  if (!examId) return <div className="p-8"><p className="text-sm text-slate-500">Буруу хаяг.</p></div>;
-
-  if (loading) {
+  if (!examId)
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="size-8 animate-spin text-blue-500" />
-          <p className="text-sm text-slate-500">Ачааллаж байна...</p>
-        </div>
+      <div className="p-8">
+        <p className="text-sm text-slate-500">Буруу хаяг.</p>
       </div>
     );
+
+  if (loading) {
+    return <ExamDetailSkeleton />;
   }
 
   if (!exam) {
     return (
       <div className="p-8 max-w-2xl">
-        <Link href="/exams" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors">
+        <Link
+          href="/exams"
+          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+        >
           <ArrowLeft className="size-4" /> Буцах
         </Link>
         <p className="mt-6 text-slate-600">Шалгалт олдсонгүй.</p>
@@ -221,23 +248,33 @@ export default function ExamDetailPage() {
   }
 
   const questions = exam.questions ?? [];
-  const mcQuestions = questions.filter(q => !q.question_type || q.question_type === "multiple_choice");
-  const oeQuestions = questions.filter(q => q.question_type === "open_ended");
+  const mcQuestions = questions.filter(
+    (q) => !q.question_type || q.question_type === "multiple_choice",
+  );
+  const oeQuestions = questions.filter((q) => q.question_type === "open_ended");
 
   return (
     <div className="min-h-screen bg-slate-50/50">
       {/* Top Nav */}
       <div className="sticky top-0 z-10 bg-white border-b border-slate-200/80 px-6 py-3 flex items-center justify-between shadow-sm">
-        <Link href="/exams" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+        <Link
+          href="/exams"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+        >
           <ArrowLeft className="size-4" /> Шалгалтууд
         </Link>
         <Button
-          variant="ghost" size="sm"
+          variant="ghost"
+          size="sm"
           className="text-red-500 hover:text-red-700 hover:bg-red-50 gap-2"
           onClick={() => void handleDeleteExam()}
           disabled={deletingExam}
         >
-          {deletingExam ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+          {deletingExam ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Trash2 className="size-4" />
+          )}
           Устгах
         </Button>
       </div>
@@ -246,34 +283,46 @@ export default function ExamDetailPage() {
         {/* Exam Info Card */}
         <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
           <div className="p-6 pb-4">
-            <h1 className="text-2xl font-bold text-slate-900 leading-tight">{exam.title}</h1>
+            <h1 className="text-2xl font-bold text-slate-900 leading-tight">
+              {exam.title}
+            </h1>
             {exam.course && (
               <p className="mt-1 text-sm font-medium text-blue-600">
                 {exam.course.code} · {exam.course.name}
               </p>
             )}
             {exam.description && (
-              <p className="mt-3 text-sm text-slate-600 leading-relaxed">{exam.description}</p>
+              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+                {exam.description}
+              </p>
             )}
           </div>
           <div className="border-t border-slate-100 grid grid-cols-3 divide-x divide-slate-100">
             <div className="flex flex-col items-center justify-center gap-1 p-4">
               <Calendar className="size-4 text-slate-400" />
               <p className="text-xs text-slate-400 font-medium">Эхлэх өдөр</p>
-              <p className="text-sm font-semibold text-slate-800">{formatDate(exam.start_time)}</p>
+              <p className="text-sm font-semibold text-slate-800">
+                {formatDate(exam.start_time)}
+              </p>
             </div>
             <div className="flex flex-col items-center justify-center gap-1 p-4">
               <Clock className="size-4 text-slate-400" />
               <p className="text-xs text-slate-400 font-medium">Эхлэх цаг</p>
-              <p className="text-sm font-semibold text-slate-800">{formatTime(exam.start_time)}</p>
+              <p className="text-sm font-semibold text-slate-800">
+                {formatTime(exam.start_time)}
+              </p>
             </div>
             <div className="flex flex-col items-center justify-center gap-1 p-4">
               <BookOpen className="size-4 text-slate-400" />
               <p className="text-xs text-slate-400 font-medium">Хугацаа</p>
-              <p className="text-sm font-semibold text-slate-800">{exam.duration} мин</p>
+              <p className="text-sm font-semibold text-slate-800">
+                {exam.duration} мин
+              </p>
             </div>
           </div>
         </div>
+        {/* Add Questions */}
+        <QuestionCreator examId={exam.id} onSaved={() => void load()} />
 
         {/* Multiple Choice Questions */}
         <QuestionSection
@@ -285,7 +334,7 @@ export default function ExamDetailPage() {
         >
           {mcQuestions.map((q) => {
             const sorted = [...(q.answers ?? [])].sort((a, b) =>
-              a.id && b.id ? a.id.localeCompare(b.id) : 0
+              a.id && b.id ? a.id.localeCompare(b.id) : 0,
             );
             const diff = q.difficulty ? diffConfig[q.difficulty] : null;
             return (
@@ -311,15 +360,23 @@ export default function ExamDetailPage() {
                           : "bg-slate-50 border border-transparent"
                       }`}
                     >
-                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                        a.is_correct ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500"
-                      }`}>
+                      <span
+                        className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                          a.is_correct
+                            ? "bg-emerald-500 text-white"
+                            : "bg-slate-200 text-slate-500"
+                        }`}
+                      >
                         {String.fromCharCode(65 + i)}
                       </span>
-                      <span className={`flex-1 ${a.is_correct ? "font-medium text-emerald-800" : "text-slate-700"}`}>
+                      <span
+                        className={`flex-1 ${a.is_correct ? "font-medium text-emerald-800" : "text-slate-700"}`}
+                      >
                         {a.text}
                       </span>
-                      {a.is_correct && <Check className="size-4 text-emerald-600 flex-shrink-0" />}
+                      {a.is_correct && (
+                        <Check className="size-4 text-emerald-600 shrink-0" />
+                      )}
                     </li>
                   ))}
                 </ol>
@@ -356,7 +413,7 @@ export default function ExamDetailPage() {
                 onDelete={() => void handleDelete(q.id)}
               >
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-100">
-                  <AlignLeft className="size-4 text-amber-500 flex-shrink-0" />
+                  <AlignLeft className="size-4 text-amber-500 shrink-0" />
                   <p className="text-sm text-amber-700 font-medium">
                     Оюутнуудаас бичгээр хариулт авна
                   </p>
@@ -365,9 +422,6 @@ export default function ExamDetailPage() {
             );
           })}
         </QuestionSection>
-
-        {/* Add Questions */}
-        <QuestionCreator examId={exam.id} onSaved={() => void load()} />
       </div>
 
       {/* Edit MC Dialog */}
@@ -375,8 +429,13 @@ export default function ExamDetailPage() {
         <AddQuestionManually
           examId={exam.id}
           open={!!editId}
-          onOpenChange={(o: boolean) => { if (!o) closeEditMC(); }}
-          onSaved={() => { closeEditMC(); void load(); }}
+          onOpenChange={(o: boolean) => {
+            if (!o) closeEditMC();
+          }}
+          onSaved={() => {
+            closeEditMC();
+            void load();
+          }}
           mode="edit"
           questionId={editId}
           initialDraft={editDraft}
@@ -388,10 +447,161 @@ export default function ExamDetailPage() {
         <EditOpenEndedDialog
           question={editOpenQuestion}
           open={!!editOpenQuestion}
-          onOpenChange={(o: boolean) => { if (!o) setEditOpenQuestion(null); }}
-          onSaved={() => { setEditOpenQuestion(null); void load(); }}
+          onOpenChange={(o: boolean) => {
+            if (!o) setEditOpenQuestion(null);
+          }}
+          onSaved={() => {
+            setEditOpenQuestion(null);
+            void load();
+          }}
         />
       )}
+    </div>
+  );
+}
+
+// ─── Skeleton Loader ──────────────────────────────────────────────────────────
+
+function ExamDetailSkeleton() {
+  return (
+    <div className="min-h-screen bg-slate-50/50">
+      {/* Top Nav Skeleton */}
+      <div className="sticky top-0 z-10 bg-white border-b border-slate-200/80 px-6 py-3 flex items-center justify-between shadow-sm">
+        <div className="h-5 w-24 bg-slate-200 rounded animate-pulse" />
+        <div className="h-8 w-16 bg-slate-200 rounded animate-pulse" />
+      </div>
+
+      <div className="mx-auto max-w-3xl px-4 py-8 space-y-6">
+        {/* Exam Info Card Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
+          <div className="p-6 pb-4 space-y-3">
+            <div className="h-8 w-3/4 bg-slate-200 rounded animate-pulse" />
+            <div className="h-4 w-1/2 bg-slate-200 rounded animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-4 w-full bg-slate-200 rounded animate-pulse" />
+              <div className="h-4 w-4/5 bg-slate-200 rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="border-t border-slate-100 grid grid-cols-3 divide-x divide-slate-100">
+            <div className="flex flex-col items-center justify-center gap-1 p-4">
+              <div className="h-4 w-4 bg-slate-200 rounded animate-pulse" />
+              <div className="h-3 w-16 bg-slate-200 rounded animate-pulse" />
+              <div className="h-4 w-12 bg-slate-200 rounded animate-pulse" />
+            </div>
+            <div className="flex flex-col items-center justify-center gap-1 p-4">
+              <div className="h-4 w-4 bg-slate-200 rounded animate-pulse" />
+              <div className="h-3 w-16 bg-slate-200 rounded animate-pulse" />
+              <div className="h-4 w-12 bg-slate-200 rounded animate-pulse" />
+            </div>
+            <div className="flex flex-col items-center justify-center gap-1 p-4">
+              <div className="h-4 w-4 bg-slate-200 rounded animate-pulse" />
+              <div className="h-3 w-16 bg-slate-200 rounded animate-pulse" />
+              <div className="h-4 w-12 bg-slate-200 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        {/* Question Creator Skeleton */}
+        <div className="bg-white rounded-2xl border border-slate-200/70 shadow-sm p-6">
+          <div className="h-6 w-48 bg-slate-200 rounded animate-pulse mb-4" />
+          <div className="space-y-3">
+            <div className="h-10 w-full bg-slate-200 rounded animate-pulse" />
+            <div className="h-24 w-full bg-slate-200 rounded animate-pulse" />
+            <div className="flex gap-2">
+              <div className="h-10 w-24 bg-slate-200 rounded animate-pulse" />
+              <div className="h-10 w-24 bg-slate-200 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        {/* Multiple Choice Questions Skeleton */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-4 w-4 bg-slate-200 rounded animate-pulse" />
+            <div className="h-5 w-32 bg-slate-200 rounded animate-pulse" />
+            <div className="h-5 w-5 bg-slate-200 rounded-full animate-pulse" />
+          </div>
+          <div className="space-y-3">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden"
+              >
+                <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="shrink-0 w-7 h-7 bg-slate-200 rounded-full animate-pulse" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="h-4 w-full bg-slate-200 rounded animate-pulse" />
+                      <div className="h-4 w-3/4 bg-slate-200 rounded animate-pulse" />
+                      <div className="flex gap-2">
+                        <div className="h-5 w-16 bg-slate-200 rounded-full animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <div className="h-8 w-8 bg-slate-200 rounded animate-pulse" />
+                    <div className="h-8 w-8 bg-slate-200 rounded animate-pulse" />
+                  </div>
+                </div>
+                <div className="border-t border-slate-100 px-5 py-3">
+                  <div className="space-y-2">
+                    {Array.from({ length: 4 }).map((_, j) => (
+                      <div
+                        key={j}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2"
+                      >
+                        <div className="w-5 h-5 bg-slate-200 rounded-full animate-pulse" />
+                        <div className="h-4 flex-1 bg-slate-200 rounded animate-pulse" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Open-Ended Questions Skeleton */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-4 w-4 bg-slate-200 rounded animate-pulse" />
+            <div className="h-5 w-32 bg-slate-200 rounded animate-pulse" />
+            <div className="h-5 w-5 bg-slate-200 rounded-full animate-pulse" />
+          </div>
+          <div className="space-y-3">
+            {Array.from({ length: 1 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden"
+              >
+                <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="shrink-0 w-7 h-7 bg-slate-200 rounded-full animate-pulse" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="h-4 w-full bg-slate-200 rounded animate-pulse" />
+                      <div className="h-4 w-2/3 bg-slate-200 rounded animate-pulse" />
+                      <div className="flex gap-2">
+                        <div className="h-5 w-16 bg-slate-200 rounded-full animate-pulse" />
+                        <div className="h-5 w-12 bg-slate-200 rounded-full animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <div className="h-8 w-8 bg-slate-200 rounded animate-pulse" />
+                    <div className="h-8 w-8 bg-slate-200 rounded animate-pulse" />
+                  </div>
+                </div>
+                <div className="border-t border-slate-100 px-5 py-3">
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50">
+                    <div className="h-4 w-4 bg-slate-200 rounded animate-pulse" />
+                    <div className="h-4 flex-1 bg-slate-200 rounded animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -399,7 +609,12 @@ export default function ExamDetailPage() {
 // ─── Reusable sub-components ──────────────────────────────────────────────────
 
 function QuestionSection({
-  title, icon, count, emptyText, emptyDesc, children,
+  title,
+  icon,
+  count,
+  emptyText,
+  emptyDesc,
+  children,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -431,7 +646,16 @@ function QuestionSection({
 }
 
 function QuestionCard({
-  idx, text, imageUrl, diff, badge, deletingId, questionId, onEdit, onDelete, children,
+  idx,
+  text,
+  imageUrl,
+  diff,
+  badge,
+  deletingId,
+  questionId,
+  onEdit,
+  onDelete,
+  children,
 }: {
   idx: number;
   text: string;
@@ -448,14 +672,16 @@ function QuestionCard({
     <li className="bg-white rounded-2xl border border-slate-200/70 shadow-sm overflow-hidden">
       <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
         <div className="flex items-start gap-3 min-w-0 flex-1">
-          <span className="flex-shrink-0 w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
+          <span className="shrink-0 w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
             {idx + 1}
           </span>
           <div className="min-w-0 flex-1">
             <p className="font-medium text-slate-900 leading-snug">{text}</p>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               {diff && (
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${diff.cls}`}>
+                <span
+                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${diff.cls}`}
+                >
                   {diff.label}
                 </span>
               )}
@@ -465,26 +691,39 @@ function QuestionCard({
         </div>
         <div className="flex shrink-0 gap-1">
           <Button
-            type="button" variant="ghost" size="icon"
+            type="button"
+            variant="ghost"
+            size="icon"
             className="h-8 w-8 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
-            onClick={onEdit} aria-label="Засах"
+            onClick={onEdit}
+            aria-label="Засах"
           >
             <Pencil className="size-4" />
           </Button>
           <Button
-            type="button" variant="ghost" size="icon"
+            type="button"
+            variant="ghost"
+            size="icon"
             className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
             disabled={deletingId === questionId}
-            onClick={onDelete} aria-label="Устгах"
+            onClick={onDelete}
+            aria-label="Устгах"
           >
-            {deletingId === questionId ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+            {deletingId === questionId ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Trash2 className="size-4" />
+            )}
           </Button>
         </div>
       </div>
       {imageUrl && (
         <div className="px-5 pb-3">
-          <img src={imageUrl} alt="Асуултын зураг"
-            className="max-h-56 w-full rounded-xl object-contain bg-slate-50 border border-slate-100" />
+          <img
+            src={imageUrl}
+            alt="Асуултын зураг"
+            className="max-h-56 w-full rounded-xl object-contain bg-slate-50 border border-slate-100"
+          />
         </div>
       )}
       <div className="border-t border-slate-100 px-5 py-3">{children}</div>

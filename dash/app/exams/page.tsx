@@ -7,7 +7,6 @@ import { SearchTabs } from "./_components/SearchTabs";
 import { CreateNewExam } from "./_components/CreateNewExam";
 import { isHiddenDashboardExam } from "@/lib/exam-visibility";
 import { graphqlRequest } from "@/lib/graphql";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const EXAMS_QUERY = `#graphql
@@ -51,7 +50,6 @@ function examStatus(start: string, end: string): ExamCardExam["status"] {
 function mapExam(e: GqlExam): ExamCardExam {
   const start = new Date(e.start_time);
   const courseLabel = e.course ? `${e.course.code} — ${e.course.name}` : "Курс";
-
   const durMin = e.duration;
   const durationLabel =
     durMin >= 60 && durMin % 60 === 0 ? `${durMin / 60} цаг` : `${durMin} мин`;
@@ -78,7 +76,7 @@ function mapExam(e: GqlExam): ExamCardExam {
   };
 }
 
-const ExamDashboard = () => {
+export default function ExamDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [exams, setExams] = useState<ExamCardExam[]>([]);
@@ -87,22 +85,17 @@ const ExamDashboard = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await graphqlRequest<{ exams: GqlExam[] | null }>(
-        EXAMS_QUERY,
-      );
+      const data = await graphqlRequest<{ exams: GqlExam[] | null }>(EXAMS_QUERY);
       const rows = (data.exams ?? [])
         .filter((exam) => !isHiddenDashboardExam(exam.title))
         .map(mapExam)
         .sort(
           (a, b) =>
-            new Date(b.rawStartTime).getTime() -
-            new Date(a.rawStartTime).getTime(),
+            new Date(b.rawStartTime).getTime() - new Date(a.rawStartTime).getTime(),
         );
       setExams(rows);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Шалгалтууд ачаалагдаагүй.",
-      );
+      toast.error(err instanceof Error ? err.message : "Шалгалтууд ачаалагдаагүй.");
       setExams([]);
     } finally {
       setLoading(false);
@@ -115,58 +108,71 @@ const ExamDashboard = () => {
 
   const filteredExams = useMemo(() => {
     return exams.filter((exam) => {
-      const matchesSearch = exam.title
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-
+      const matchesSearch = exam.title.toLowerCase().includes(searchQuery.toLowerCase());
       let matchesStatus = true;
       if (statusFilter !== "all") {
-        if (statusFilter === "in-progress" && exam.status !== "Авагдаж байгаа")
-          matchesStatus = false;
-        if (statusFilter === "scheduled" && exam.status !== "Төлөвлөгдсөн")
-          matchesStatus = false;
-        if (statusFilter === "completed" && exam.status !== "Дууссан")
-          matchesStatus = false;
-        if (statusFilter === "drafts" && exam.status !== "Драфт")
-          matchesStatus = false;
+        if (statusFilter === "in-progress" && exam.status !== "Авагдаж байгаа") matchesStatus = false;
+        if (statusFilter === "scheduled" && exam.status !== "Төлөвлөгдсөн") matchesStatus = false;
+        if (statusFilter === "completed" && exam.status !== "Дууссан") matchesStatus = false;
+        if (statusFilter === "drafts" && exam.status !== "Драфт") matchesStatus = false;
       }
-
       return matchesSearch && matchesStatus;
     });
   }, [exams, searchQuery, statusFilter]);
 
   return (
-    <div className="p-8 bg-[#f9fafb] min-h-screen">
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Шалгалт</h1>
+    <div className="min-h-screen bg-white font-sans">
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Шалгалт</h1>
+          <CreateNewExam />
         </div>
 
-        <CreateNewExam />
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <SearchExam value={searchQuery} onChange={setSearchQuery} />
+          <SearchTabs value={statusFilter} onValueChange={setStatusFilter} />
+        </div>
+
+        {/* Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : filteredExams.length === 0 ? (
+          <div className="py-20 text-center border border-dashed border-gray-200 rounded-lg bg-gray-50">
+            <p className="text-sm text-gray-400">Шалгалт олдсонгүй.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredExams.map((exam) => (
+              <ExamCard key={exam.id} exam={exam} onExamUpdated={load} />
+            ))}
+          </div>
+        )}
       </div>
-
-      <div className="space-y-4 mb-8">
-        <SearchExam value={searchQuery} onChange={setSearchQuery} />
-        <SearchTabs value={statusFilter} onValueChange={setStatusFilter} />
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 className="size-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : filteredExams.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground py-16 rounded-xl border border-dashed bg-white">
-          Шалгалт олдсонгүй.
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredExams.map((exam) => (
-            <ExamCard key={exam.id} exam={exam} onExamUpdated={load} />
-          ))}
-        </div>
-      )}
     </div>
   );
-};
+}
 
-export default ExamDashboard;
+function SkeletonCard() {
+  return (
+    <div className="rounded-xl border border-gray-100 bg-white p-5 space-y-4 shadow-sm">
+      {/* Status badge */}
+      <div className="h-5 w-20 rounded bg-gray-100 animate-pulse" />
+      {/* Title */}
+      <div className="space-y-2">
+        <div className="h-5 w-3/4 rounded bg-gray-100 animate-pulse" />
+        <div className="h-4 w-1/2 rounded bg-gray-50 animate-pulse" />
+      </div>
+      {/* Meta */}
+      <div className="pt-3 border-t border-gray-50 space-y-2">
+        <div className="h-4 w-2/3 rounded bg-gray-50 animate-pulse" />
+        <div className="h-4 w-1/3 rounded bg-gray-50 animate-pulse" />
+      </div>
+    </div>
+  );
+}

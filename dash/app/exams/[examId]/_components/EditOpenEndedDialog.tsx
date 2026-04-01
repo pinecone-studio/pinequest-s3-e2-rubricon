@@ -67,7 +67,9 @@ export function EditOpenEndedDialog({
   const [content, setContent] = useState(question.text);
   const [difficulty, setDifficulty] = useState(question.difficulty ?? "medium");
   const [maxPoints, setMaxPoints] = useState(String(question.max_points ?? 1));
-  const [imageUrl, setImageUrl] = useState<string | null>(question.image_url ?? null);
+  const [imageUrl, setImageUrl] = useState<string | null>(
+    question.image_url ?? null,
+  );
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -126,9 +128,11 @@ export function EditOpenEndedDialog({
         <div className="overflow-y-auto flex-1 px-5 py-5 min-h-0">
           <FieldGroup className="gap-4">
             <Field>
-              <Label className="text-sm font-medium text-slate-700">Асуултын текст</Label>
+              <Label className="text-sm font-medium text-slate-700">
+                Асуултын текст
+              </Label>
               <Textarea
-                className="mt-1 resize-none min-h-[100px] rounded-xl border-slate-200"
+                className="mt-1 resize-none min-h-25 rounded-xl border-slate-200"
                 placeholder="Асуултаа дэлгэрэнгүй бичнэ үү..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -139,7 +143,9 @@ export function EditOpenEndedDialog({
 
             <div className="grid grid-cols-2 gap-3">
               <Field>
-                <Label className="text-sm font-medium text-slate-700">Хэцүүн</Label>
+                <Label className="text-sm font-medium text-slate-700">
+                  Хэцүүн
+                </Label>
                 <Select
                   value={difficulty}
                   onValueChange={setDifficulty}
@@ -157,7 +163,9 @@ export function EditOpenEndedDialog({
               </Field>
 
               <Field>
-                <Label className="text-sm font-medium text-slate-700">Дээд оноо</Label>
+                <Label className="text-sm font-medium text-slate-700">
+                  Дээд оноо
+                </Label>
                 <Input
                   type="number"
                   min={1}
@@ -178,7 +186,11 @@ export function EditOpenEndedDialog({
               <div className="mt-2 flex items-center gap-3">
                 {imageUrl ? (
                   <div className="relative size-24 rounded-xl border border-slate-200 overflow-hidden shadow-sm group">
-                    <img src={imageUrl} alt="" className="size-full object-cover" />
+                    <img
+                      src={imageUrl}
+                      alt=""
+                      className="size-full object-cover"
+                    />
                     <button
                       type="button"
                       onClick={() => setImageUrl(null)}
@@ -190,7 +202,9 @@ export function EditOpenEndedDialog({
                 ) : (
                   <label className="flex flex-col items-center justify-center size-24 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-300 hover:bg-blue-50/60 transition-all">
                     <ImageIcon className="size-5 text-slate-400" />
-                    <span className="text-[10px] text-slate-500 mt-1 font-medium">Зураг нэмэх</span>
+                    <span className="text-[10px] text-slate-500 mt-1 font-medium">
+                      Зураг нэмэх
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
@@ -231,12 +245,15 @@ export function EditOpenEndedDialog({
           </DialogClose>
           <Button
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700 text-white min-w-[90px]"
+            className="bg-blue-600 hover:bg-blue-700 text-white min-w-22.5"
             disabled={saving || uploading}
             onClick={() => void handleSave()}
           >
             {saving ? (
-              <><Loader2 className="size-4 animate-spin mr-1.5 inline" />Хадгалж байна…</>
+              <>
+                <Loader2 className="size-4 animate-spin mr-1.5 inline" />
+                Хадгалж байна…
+              </>
             ) : (
               "Хадгалах"
             )}

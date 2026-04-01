@@ -256,7 +256,7 @@ export const CreateNewExam = () => {
                   <SelectContent
                     position="popper"
                     sideOffset={5}
-                    className="w-[var(--radix-select-trigger-width)] z-[100]"
+                    className="w-(--radix-select-trigger-width) z-100"
                   >
                     {courses.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
@@ -301,7 +301,7 @@ export const CreateNewExam = () => {
                   <SelectContent
                     position="popper"
                     sideOffset={5}
-                    className="w-[var(--radix-select-trigger-width)] z-[50]"
+                    className="w-(--radix-select-trigger-width) z-50"
                   >
                     <SelectItem value="20">20 минут</SelectItem>
                     <SelectItem value="30">30 минут</SelectItem>
@@ -381,7 +381,7 @@ export const CreateNewExam = () => {
             <Button
               type="button"
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white min-w-[110px]"
+              className="bg-blue-600 hover:bg-blue-700 text-white min-w-27.5"
               onClick={() => void handleCreateShell()}
               disabled={saving}
             >
