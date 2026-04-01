@@ -55,5 +55,8 @@ export const getScheduledStartedAtIso = (
     ).toISOString();
   }
 
+  // ⚠️ Энд new Date() буцаавал startedAt = now болно
+  // тэгвэл effectiveEnd = now + duration болж, хугацаа зөрнө
+  // Илүү найдвартай: exam үүссэн цагийг ашиглах эсвэл алдаа шидэх
   return new Date().toISOString();
 };

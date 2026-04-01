@@ -35,6 +35,11 @@ export const ExamProgressBar = () => {
   const scheduledEndsAtMs = getScheduledEndsAtMs(exam);
 
   const getStartedAt = () => {
+    // exam.startTime байвал шууд тэрийг ашигла, localStorage хэрэггүй
+    if (exam.startTime) {
+      return getScheduledStartedAtIso(exam, scheduledEndsAtMs);
+    }
+
     if (typeof window === "undefined") {
       return getScheduledStartedAtIso(exam, scheduledEndsAtMs);
     }
