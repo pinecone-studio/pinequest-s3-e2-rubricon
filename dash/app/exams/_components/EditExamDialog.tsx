@@ -78,12 +78,18 @@ export const EditExamDialog = ({
   const [courseId, setCourseId] = useState(exam.courseId);
 
   const parsedStart = new Date(exam.rawStartTime);
-  const initialDate = Number.isNaN(parsedStart.getTime()) ? "" : parsedStart.toISOString().split("T")[0];
-  const initialTime = Number.isNaN(parsedStart.getTime()) ? "09:00" : parsedStart.toTimeString().slice(0, 5);
-  
+  const initialDate = Number.isNaN(parsedStart.getTime())
+    ? ""
+    : parsedStart.toISOString().split("T")[0];
+  const initialTime = Number.isNaN(parsedStart.getTime())
+    ? "09:00"
+    : parsedStart.toTimeString().slice(0, 5);
+
   const [examDate, setExamDate] = useState(initialDate);
   const [examTime, setExamTime] = useState(initialTime);
-  const [durationMinutes, setDurationMinutes] = useState(String(exam.rawDuration));
+  const [durationMinutes, setDurationMinutes] = useState(
+    String(exam.rawDuration),
+  );
   const [imageUrl, setImageUrl] = useState(exam.image_url || null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -95,8 +101,8 @@ export const EditExamDialog = ({
         .then((data) => setCourses(data.courses ?? []))
         .catch((e) =>
           toast.error(
-            e instanceof Error ? e.message : "Курсууд ачаалагдаагүй байна."
-          )
+            e instanceof Error ? e.message : "Курсууд ачаалагдаагүй байна.",
+          ),
         )
         .finally(() => setCoursesLoading(false));
     }
@@ -110,6 +116,10 @@ export const EditExamDialog = ({
     if (Number.isNaN(start.getTime())) {
       throw new Error("Огноо эсвэл цаг буруу байна.");
     }
+
+    // UTC+8 цагийн зөрүүг нэмэх (Монгол улсын цагийн бүс)
+    start.setHours(start.getHours() + 8);
+
     const dur = Number.parseInt(durationMinutes, 10);
     if (!Number.isFinite(dur) || dur <= 0) {
       throw new Error("Хугацаа зөв сонгоно уу.");
@@ -155,9 +165,7 @@ export const EditExamDialog = ({
       onOpenChange(false);
       onUpdated();
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "Шинэчлэхэд алдаа гарлаа."
-      );
+      toast.error(e instanceof Error ? e.message : "Шинэчлэхэд алдаа гарлаа.");
     } finally {
       setSaving(false);
     }
@@ -167,7 +175,9 @@ export const EditExamDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md" showCloseButton={!saving}>
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-slate-900">Шалгалт засах</DialogTitle>
+          <DialogTitle className="text-lg font-semibold text-slate-900">
+            Шалгалт засах
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-1">
           <FieldGroup className="gap-4">
@@ -239,55 +249,61 @@ export const EditExamDialog = ({
               </Select>
             </Field>
             <Field>
-                <Label className="text-sm font-medium text-slate-700">
-                  Ковер зураг{" "}
-                  <span className="text-slate-400 font-normal">(заавал биш)</span>
-                </Label>
-                <div className="mt-2 flex items-center gap-3">
-                  {imageUrl ? (
-                    <div className="relative size-20 rounded-xl border border-slate-200 overflow-hidden shadow-sm group">
-                      <img src={imageUrl} alt="Exam cover" className="size-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => setImageUrl(null)}
-                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-xl"
-                      >
-                        <X size={16} className="text-white" />
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="flex flex-col items-center justify-center size-20 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-300 hover:bg-blue-50/60 transition-all">
-                      <ImageIcon className="size-5 text-slate-400" />
-                      <span className="text-[10px] text-slate-500 mt-1 font-medium">Зураг нэмэх</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        disabled={uploading}
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          setUploading(true);
-                          try {
-                            const url = await uploadImageToCloudinary(file);
-                            setImageUrl(url);
-                          } catch (err) {
-                            toast.error("Зураг хуулахад алдаа гарлаа.");
-                          } finally {
-                            setUploading(false);
-                          }
-                        }}
-                      />
-                    </label>
-                  )}
-                  {uploading && (
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                      <Loader2 className="size-4 animate-spin text-blue-500" />
-                      <span>Хуулж байна...</span>
-                    </div>
-                  )}
-                </div>
-              </Field>
+              <Label className="text-sm font-medium text-slate-700">
+                Ковер зураг{" "}
+                <span className="text-slate-400 font-normal">(заавал биш)</span>
+              </Label>
+              <div className="mt-2 flex items-center gap-3">
+                {imageUrl ? (
+                  <div className="relative size-20 rounded-xl border border-slate-200 overflow-hidden shadow-sm group">
+                    <img
+                      src={imageUrl}
+                      alt="Exam cover"
+                      className="size-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setImageUrl(null)}
+                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-xl"
+                    >
+                      <X size={16} className="text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center size-20 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-300 hover:bg-blue-50/60 transition-all">
+                    <ImageIcon className="size-5 text-slate-400" />
+                    <span className="text-[10px] text-slate-500 mt-1 font-medium">
+                      Зураг нэмэх
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploading}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setUploading(true);
+                        try {
+                          const url = await uploadImageToCloudinary(file);
+                          setImageUrl(url);
+                        } catch (err) {
+                          toast.error("Зураг хуулахад алдаа гарлаа.");
+                        } finally {
+                          setUploading(false);
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+                {uploading && (
+                  <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <Loader2 className="size-4 animate-spin text-blue-500" />
+                    <span>Хуулж байна...</span>
+                  </div>
+                )}
+              </div>
+            </Field>
           </FieldGroup>
         </div>
         <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
@@ -307,7 +323,10 @@ export const EditExamDialog = ({
             className="bg-blue-600 hover:bg-blue-700 text-white min-w-[90px]"
           >
             {saving ? (
-              <><Loader2 className="size-4 animate-spin mr-1.5 inline" />Хадгалж байна…</>
+              <>
+                <Loader2 className="size-4 animate-spin mr-1.5 inline" />
+                Хадгалж байна…
+              </>
             ) : (
               "Хадгалах"
             )}

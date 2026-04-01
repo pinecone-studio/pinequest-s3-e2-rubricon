@@ -125,10 +125,17 @@ export const CreateNewExam = () => {
     if (!examDate || !examTime) {
       throw new Error("Өдөр болон цагийг сонгоно уу.");
     }
-    const start = new Date(`${examDate}T${examTime}:00`);
+    const [year, month, day] = examDate.split("-").map(Number);
+    const [hours, minutes] = examTime.split(":").map(Number);
+    const start = new Date(year, month - 1, day, hours, minutes);
+
     if (Number.isNaN(start.getTime())) {
       throw new Error("Огноо эсвэл цаг буруу байна.");
     }
+
+    // UTC+8 цагийн зөрүүг нэмэх (Монгол улсын цагийн бүс)
+    start.setHours(start.getHours() + 8);
+
     const dur = Number.parseInt(durationMinutes, 10);
     if (!Number.isFinite(dur) || dur <= 0) {
       throw new Error("Хугацаа зөв сонгоно уу.");
@@ -216,45 +223,19 @@ export const CreateNewExam = () => {
               {step === "shell" && "Шинэ шалгалт үүсгэх"}
               {step === "ai" && "AI туслах"}
             </DialogTitle>
-            <p className="text-sm text-slate-500 mt-0.5">
-              {step === "shell" &&
-                "Үндсэн мэдээллээ оруулна уу. Асуултуудаа дараагийн алхамд нэмнэ."}
-              {step === "ai" && "AI урсгалаа энд холбоно."}
-            </p>
           </DialogHeader>
         </div>
 
         <div className="overflow-y-auto flex-1 px-4 py-4 min-h-0">
           {step === "shell" && (
             <FieldGroup className="gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-fit gap-2"
-                onClick={() => setStep("ai")}
-                disabled={saving}
-              >
-                <Sparkles className="size-4" />
-                AI туслах ашиглах
-              </Button>
               <Field>
                 <Label htmlFor="exam-name">Шалгалтын нэр</Label>
                 <Input
                   id="exam-name"
-                  placeholder="Жишээ: Дунд шалгалт"
+                  placeholder="Жишээ: Математикийн сорил"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  disabled={saving}
-                />
-              </Field>
-              <Field>
-                <Label htmlFor="exam-desc">Тайлбар (заавал биш)</Label>
-                <Input
-                  id="exam-desc"
-                  placeholder="Товч тайлбар"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
                   disabled={saving}
                 />
               </Field>
@@ -333,7 +314,11 @@ export const CreateNewExam = () => {
                 <div className="mt-2 flex items-center gap-4">
                   {imageUrl ? (
                     <div className="relative size-20 rounded-lg border overflow-hidden">
-                      <img src={imageUrl} alt="Exam cover" className="size-full object-cover" />
+                      <img
+                        src={imageUrl}
+                        alt="Exam cover"
+                        className="size-full object-cover"
+                      />
                       <button
                         type="button"
                         onClick={() => setImageUrl(null)}
@@ -345,7 +330,9 @@ export const CreateNewExam = () => {
                   ) : (
                     <label className="flex flex-col items-center justify-center size-20 rounded-lg border border-dashed border-slate-300 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors">
                       <ImageIcon className="size-6 text-slate-400" />
-                      <span className="text-[10px] text-slate-500 mt-1">Зураг</span>
+                      <span className="text-[10px] text-slate-500 mt-1">
+                        Зураг
+                      </span>
                       <input
                         type="file"
                         accept="image/*"
@@ -367,13 +354,17 @@ export const CreateNewExam = () => {
                       />
                     </label>
                   )}
-                  {uploading && <Loader2 className="size-5 animate-spin text-[#006fee]" />}
+                  {uploading && (
+                    <Loader2 className="size-5 animate-spin text-[#006fee]" />
+                  )}
                 </div>
               </Field>
             </FieldGroup>
           )}
 
-          {step === "ai" && <AIQuestionWizard onBack={() => setStep("shell")} />}
+          {step === "ai" && (
+            <AIQuestionWizard onBack={() => setStep("shell")} />
+          )}
         </div>
 
         {step === "shell" && (
@@ -391,7 +382,10 @@ export const CreateNewExam = () => {
               disabled={saving}
             >
               {saving ? (
-                <><Loader2 className="size-4 animate-spin mr-1.5 inline" />Үүсгэж байна…</>
+                <>
+                  <Loader2 className="size-4 animate-spin mr-1.5 inline" />
+                  Үүсгэж байна…
+                </>
               ) : (
                 "Үргэлжлүүлэх"
               )}
