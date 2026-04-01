@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 
 const getStoredEndsAtMs = (storageKey: string) => {
-  if (typeof window === "undefined") {
-    return null;
-  }
+  if (typeof window === "undefined") return null;
 
   const savedEndsAt = localStorage.getItem(storageKey);
   const parsedEndsAt = savedEndsAt ? Number(savedEndsAt) : NaN;
@@ -26,14 +24,9 @@ const getEffectiveEndsAtMs = (
   }
 
   const storedEndsAtMs = getStoredEndsAtMs(storageKey);
+  if (storedEndsAtMs !== null) return storedEndsAtMs;
 
-  if (storedEndsAtMs !== null) {
-    return storedEndsAtMs;
-  }
-
-  if (typeof window === "undefined") {
-    return null;
-  }
+  if (typeof window === "undefined") return null;
 
   return Date.now() + durationSeconds * 1000;
 };
@@ -50,16 +43,21 @@ const ExamTimer = ({
   durationSeconds = 4500,
   storageKey,
   scheduledEndsAtMs,
+  onTimeUp,
 }: {
   durationSeconds?: number;
   storageKey: string;
   scheduledEndsAtMs?: number | null;
+  onTimeUp?: () => void;
 }) => {
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  const firedRef = useRef(false);
+
   const effectiveEndsAtMs = useMemo(
     () => getEffectiveEndsAtMs(durationSeconds, storageKey, scheduledEndsAtMs),
     [durationSeconds, scheduledEndsAtMs, storageKey],
   );
+
   const timeLeft =
     effectiveEndsAtMs === null
       ? durationSeconds
@@ -77,7 +75,6 @@ const ExamTimer = ({
     }
 
     const storedEndsAtMs = getStoredEndsAtMs(storageKey);
-
     if (storedEndsAtMs === null && effectiveEndsAtMs !== null) {
       localStorage.setItem(storageKey, effectiveEndsAtMs.toString());
     }
@@ -93,6 +90,14 @@ const ExamTimer = ({
     return () => clearInterval(interval);
   }, [timeLeft]);
 
+  // Auto submit trigger
+  useEffect(() => {
+    if (timeLeft > 0) return;
+    if (firedRef.current) return;
+    firedRef.current = true;
+    onTimeUp?.();
+  }, [timeLeft, onTimeUp]);
+
   return (
     <div className="border-none">
       <Card className="flex flex-col gap-2.5 rounded-xl py-4 mb-6 justify-center w-full">
@@ -102,7 +107,9 @@ const ExamTimer = ({
         </CardHeader>
         <CardContent className="justify-center font-mono">
           <p
-            className={`text-3xl font-mono font-medium tracking-tight text-center ${timeLeft < 300 ? "text-red-500" : "text-gray-800"}`}
+            className={`text-3xl font-mono font-medium tracking-tight text-center ${
+              timeLeft < 300 ? "text-red-500" : "text-gray-800"
+            }`}
           >
             {formatTime(timeLeft)}
           </p>

@@ -43,7 +43,7 @@ const CREATE_SUBMISSION_MUTATION = `
     $studentId: String!
     $examId: String!
     $startedAt: String!
-    $submittedAt: String!
+    $submittedAt: String
     $status: SubmissionStatus
   ) {
     createSubmission(
@@ -83,12 +83,14 @@ const CREATE_SUBMISSION_ANSWER_MUTATION = `
 const UPDATE_SUBMISSION_MUTATION = `
   mutation UpdateSubmission(
     $id: String!
+    $submittedAt: String
     $scoreAuto: Int
     $finalScore: Int
     $status: SubmissionStatus
   ) {
     updateSubmission(
       id: $id
+      submitted_at: $submittedAt
       score_auto: $scoreAuto
       final_score: $finalScore
       status: $status
@@ -108,19 +110,16 @@ const buildSubmissionAnswers = (
   return questions.flatMap<SubmissionAnswer>((question) => {
     const rawAnswer = answers[question.id];
 
-    if (!rawAnswer) {
-      return [];
-    }
+    if (!rawAnswer) return [];
 
     if (question.type === "Short Answer") {
       const textAnswer = rawAnswer.trim();
-
-      if (!textAnswer) {
-        return [];
-      }
+      if (!textAnswer) return [];
 
       const normalizedStudentAnswer = normalizeAnswerText(textAnswer);
-      const normalizedCorrectAnswer = normalizeAnswerText(question.correctAnswer);
+      const normalizedCorrectAnswer = normalizeAnswerText(
+        question.correctAnswer,
+      );
       const isAutoGradable = normalizedCorrectAnswer.length > 0;
       const isCorrect = isAutoGradable
         ? normalizedStudentAnswer === normalizedCorrectAnswer
@@ -136,11 +135,11 @@ const buildSubmissionAnswers = (
       ];
     }
 
-    const selectedChoice = question.choices?.find((choice) => choice.id === rawAnswer);
+    const selectedChoice = question.choices?.find(
+      (choice) => choice.id === rawAnswer,
+    );
 
-    if (!selectedChoice?.answerId) {
-      return [];
-    }
+    if (!selectedChoice?.answerId) return [];
 
     return [
       {
@@ -153,13 +152,8 @@ const buildSubmissionAnswers = (
   });
 };
 
-const canAutoGradeSubmission = (
-  questions: ExamQuestion[],
-) => {
-  if (questions.length === 0) {
-    return false;
-  }
-
+const canAutoGradeSubmission = (questions: ExamQuestion[]) => {
+  if (questions.length === 0) return false;
   return questions.every(
     (question) => normalizeAnswerText(question.correctAnswer).length > 0,
   );
@@ -176,23 +170,24 @@ export const submitExamToBackend = async ({
 }: SubmitExamInput) => {
   const studentId = await resolveStudentId(studentEmail, studentName);
 
+  // 1) Submission-оо эхлээд IN_PROGRESS болгож үүсгэнэ.
   const submissionResponse = await graphqlRequest<CreateSubmissionResponse>(
     CREATE_SUBMISSION_MUTATION,
     {
       studentId,
       examId,
       startedAt,
-      submittedAt,
-      status: "submitted",
+      submittedAt: null,
+      status: "in_progress",
     },
   );
 
   const submissionId = submissionResponse.createSubmission?.id;
-
   if (!submissionId) {
     throw new Error("Шалгалтын submission үүсгэж чадсангүй.");
   }
 
+  // 2) Дараа нь answers-уудаа хадгална (энэ үед editable OK).
   const submissionAnswers = buildSubmissionAnswers(questions, answers);
 
   await Promise.all(
@@ -211,6 +206,14 @@ export const submitExamToBackend = async ({
     ),
   );
 
+  // 3) Одоо л submission-оо SUBMITTED болгоно.
+  await graphqlRequest<UpdateSubmissionResponse>(UPDATE_SUBMISSION_MUTATION, {
+    id: submissionId,
+    submittedAt,
+    status: "submitted",
+  });
+
+  // 4) Auto-grade боломжтой бол reviewed + score-ууд.
   if (canAutoGradeSubmission(questions)) {
     const finalScore = submissionAnswers.reduce(
       (sum, answer) => sum + (answer.score ?? 0),

@@ -123,6 +123,7 @@ export const ExamProgressBar = () => {
         durationSeconds={exam.durationSeconds}
         storageKey={`exam-ends-at:${exam.id}`}
         scheduledEndsAtMs={scheduledEndsAtMs}
+        onTimeUp={handleFinishExam}
       />
       <div className="flex-1">
         <h3 className="text-sm font-medium mb-3 ">Асуултууд</h3>
