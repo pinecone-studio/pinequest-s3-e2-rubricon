@@ -262,6 +262,26 @@ const CompletedExams = () => {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const { body, documentElement } = document;
+    const previousBodyOverflow = body.style.overflow;
+    const previousHtmlOverflow = documentElement.style.overflow;
+
+    if (isDialogOpen) {
+      body.style.overflow = "hidden";
+      documentElement.style.overflow = "hidden";
+    }
+
+    return () => {
+      body.style.overflow = previousBodyOverflow;
+      documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [isDialogOpen]);
+
+  useEffect(() => {
     let cancelled = false;
 
     if (!isLoaded) {

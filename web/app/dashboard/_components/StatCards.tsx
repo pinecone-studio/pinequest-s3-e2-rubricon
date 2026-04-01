@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import {
   BadgePercent,
   BookOpen,
   Clock,
   FileCheck2,
-  Target,
 } from "lucide-react";
+import { useGradesCourses } from "@/app/grades/_hooks/use-grades-courses";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isHiddenStudentExam } from "@/lib/exam-visibility";
@@ -145,30 +145,6 @@ const getLatestSubmissionPerExam = (
   return [...latestByExam.values()];
 };
 
-const getAverageScoreSummary = (value: number | null | undefined) => {
-  if (typeof value !== "number" || Number.isNaN(value)) {
-    return null;
-  }
-
-  if (value >= 90) {
-    return "Маш сайн";
-  }
-
-  if (value >= 80) {
-    return "Сайн";
-  }
-
-  if (value >= 70) {
-    return "Хэвийн";
-  }
-
-  if (value >= 60) {
-    return "Анхаарах хэрэгтэй";
-  }
-
-  return "Сайжруулах хэрэгтэй";
-};
-
 const buildStats = (
   data: DashboardStatsResponse,
   studentId: string,
@@ -243,11 +219,32 @@ const buildStats = (
 };
 
 export function StatCards() {
+  const { courses, loading: gradesLoading } = useGradesCourses();
   const [stats, setStats] = useState<StatsState>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const { user, isLoaded } = useUser();
+
+  const { gradedCoursesCount, overallGPA } = useMemo(() => {
+    const gradedCourses = courses.filter(
+      (course) => typeof course.currentGrade === "number",
+    );
+    const averageGrade =
+      gradedCourses.length > 0
+        ? Math.round(
+            gradedCourses.reduce(
+              (acc, grade) => acc + (grade.currentGrade ?? 0),
+              0,
+            ) / gradedCourses.length,
+          )
+        : 0;
+
+    return {
+      gradedCoursesCount: gradedCourses.length,
+      overallGPA: gradedCourses.length > 0 ? (averageGrade / 100) * 4 : 0,
+    };
+  }, [courses]);
 
   useEffect(() => {
     let cancelled = false;
@@ -313,8 +310,6 @@ export function StatCards() {
     };
   }, [isLoaded, user?.primaryEmailAddress?.emailAddress]);
 
-  const averageScoreSummary = getAverageScoreSummary(stats.averageScore);
-
   const statItems: StatItem[] = [
     {
       label: "Бүртгэлтэй хичээл",
@@ -343,17 +338,13 @@ export function StatCards() {
       icon: <FileCheck2 className="w-4 h-4 text-[#006d77]" />,
     },
     {
-      label: "Дундаж үнэлгээ",
+      label: "GPA",
       value:
-        stats.averageScore !== null
-          ? `${stats.averageScore} оноо`
-          : "Хүлээгдэж байна...",
+        !gradesLoading ? overallGPA.toFixed(2) : "Хүлээгдэж байна...",
       sub:
-        stats.reviewedCount > 0
-          ? averageScoreSummary
-            ? `${averageScoreSummary} · ${stats.reviewedCount} шалгалт үнэлэгдсэн`
-            : `${stats.reviewedCount} шалгалт үнэлэгдсэн`
-          : "Шалгасан үнэлгээ хараахан алга",
+        !gradesLoading && gradedCoursesCount > 0
+          ? `4.0-аас · ${gradedCoursesCount} хичээл үнэлэгдсэн`
+          : "4.0-аас",
       icon: <BadgePercent className="w-4 h-4 text-[#006d77]" />,
     },
   ];

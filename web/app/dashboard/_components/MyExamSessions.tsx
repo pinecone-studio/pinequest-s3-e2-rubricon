@@ -265,8 +265,9 @@ const buildDashboardUpcomingExams = (
 export function MyExamSessions({ className }: MyExamSessionsProps) {
   const { user, isLoaded } = useUser();
   const router = useRouter();
+  const [hasMounted, setHasMounted] = useState(false);
   const [exams, setExams] = useState<SessionExamCard[]>([]);
-  const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const [currentTime, setCurrentTime] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -277,6 +278,9 @@ export function MyExamSessions({ className }: MyExamSessionsProps) {
   );
 
   useEffect(() => {
+    setHasMounted(true);
+    setCurrentTime(Date.now());
+
     const intervalId = window.setInterval(() => {
       setCurrentTime(Date.now());
     }, 1000);
@@ -316,14 +320,7 @@ export function MyExamSessions({ className }: MyExamSessionsProps) {
 
         if (cancelled) return;
 
-        const studentId = response.studentByEmail?.id;
-
-        if (!studentId) {
-          setExams([]);
-          setMessage("Таны оюутны мэдээлэл олдсонгүй.");
-          return;
-        }
-
+        const studentId = response.studentByEmail?.id ?? "";
         const nextExams = buildDashboardUpcomingExams(response, studentId);
 
         setExams(nextExams);
@@ -356,7 +353,7 @@ export function MyExamSessions({ className }: MyExamSessionsProps) {
     <TooltipProvider>
       <Card
         className={cn(
-          "overflow-hidden rounded-2xl border-white/40 bg-white/60  ring-1 ring-black/8",
+          "min-h-[320px] overflow-hidden rounded-2xl border-white/40 bg-white/60 ring-1 ring-black/8",
           className,
         )}
       >
@@ -384,8 +381,8 @@ export function MyExamSessions({ className }: MyExamSessionsProps) {
           </Button>
         </CardHeader>
 
-        <CardContent className="px-5 pb-5">
-          {loading ? (
+        <CardContent className="flex flex-1 flex-col px-5 pb-5">
+          {!hasMounted || loading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }, (_, index) => (
                 <div
@@ -475,7 +472,7 @@ export function MyExamSessions({ className }: MyExamSessionsProps) {
                         <Button
                           type="button"
                           onClick={() => router.push(`/exam?examId=${exam.id}`)}
-                          className="flex h-6 shrink-0 items-center gap-0.5 self-start rounded-md bg-[#006d77] px-2 py-0 text-[12px] hover:cursor-pointer lg:self-center"
+                          className="flex h-7 shrink-0 items-center gap-0.5 self-start rounded-md bg-[#006d77] px-3 py-0 text-[12px] hover:cursor-pointer lg:self-center"
                         >
                           Шалгалт өгөх <ChevronRight className="h-1.5 w-1.5" />
                         </Button>

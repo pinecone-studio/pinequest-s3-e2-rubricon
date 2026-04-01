@@ -116,7 +116,9 @@ function getTimestamp(value: string | null | undefined) {
   return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
-function getLatestSubmissionPerExam(submissions: GradesResponse["submissions"]) {
+function getLatestSubmissionPerExam(
+  submissions: GradesResponse["submissions"],
+) {
   const latestByExam = new Map<string, GradesResponse["submissions"][number]>();
 
   [...submissions]
@@ -150,7 +152,8 @@ function buildCourseGrades(
       .filter(
         (submission) =>
           submission.student_id === studentId &&
-          (submission.status === "submitted" || submission.status === "reviewed"),
+          (submission.status === "submitted" ||
+            submission.status === "reviewed"),
       )
       .map((submission) => submission.exam_id),
   );
@@ -220,9 +223,7 @@ function buildCourseGrades(
                 : "not_submitted",
           };
         })
-        .filter(
-          (exam): exam is GradesCourse["exams"][number] => exam !== null,
-        );
+        .filter((exam): exam is GradesCourse["exams"][number] => exam !== null);
 
       const reviewedExams = exams.filter(
         (exam) => exam.score !== null && exam.maxScore > 0,
@@ -245,7 +246,9 @@ function buildCourseGrades(
         courseCode: course.code?.trim() || "CODE",
         courseName: course.name?.trim() || "Нэргүй хичээл",
         currentGrade:
-          totalMaxScore > 0 ? Math.round((totalScore / totalMaxScore) * 100) : null,
+          totalMaxScore > 0
+            ? Math.round((totalScore / totalMaxScore) * 100)
+            : null,
         exams,
       };
     })
@@ -301,7 +304,7 @@ export function useGradesCourses(): UseGradesCoursesResult {
 
         if (!studentId) {
           setCourses([]);
-          setMessage("Таны оюутны мэдээлэл олдсонгүй.");
+          setMessage(" Таны оюутны мэдээлэл олдсонгүй.");
           return;
         }
 
