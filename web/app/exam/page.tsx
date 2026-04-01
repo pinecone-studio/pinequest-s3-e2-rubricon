@@ -19,7 +19,7 @@ const Exam = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center  text-sm text-gray-500">
+      <div className="flex min-h-screen items-center justify-center text-sm text-gray-500">
         Шалгалтыг ачаалж байна...
       </div>
     );
@@ -27,7 +27,7 @@ const Exam = () => {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center  px-6 text-center text-sm text-red-600">
+      <div className="flex min-h-screen items-center justify-center px-6 text-center text-sm text-red-600">
         {error}
       </div>
     );
@@ -35,7 +35,7 @@ const Exam = () => {
 
   if (!data || data.questions.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center  px-6 text-center text-sm text-gray-500">
+      <div className="flex min-h-screen items-center justify-center px-6 text-center text-sm text-gray-500">
         Энэ шалгалтад асуулт олдсонгүй.
       </div>
     );
@@ -56,12 +56,15 @@ export const ExamContent = () => {
   const { recordWarning, warningCount } = useExamWarningTracker();
   const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const registerWarning = useCallback((code: string, description: string) => {
-    recordWarning(
-      code as (typeof EXAM_WARNING_CODES)[keyof typeof EXAM_WARNING_CODES],
-    );
-    console.log(`[exam-warning] ${code}: ${description}`);
-  }, [recordWarning]);
+  const registerWarning = useCallback(
+    (code: string, description: string) => {
+      recordWarning(
+        code as (typeof EXAM_WARNING_CODES)[keyof typeof EXAM_WARNING_CODES],
+      );
+      console.log(`[exam-warning] ${code}: ${description}`);
+    },
+    [recordWarning],
+  );
 
   useEffect(() => {
     console.log(`[exam-warning-count] ${warningCount}`);
