@@ -42,6 +42,9 @@ import { examSqsMutations } from "./modules/exams-sqs/mutations";
 import { cheatLogTypeDefs } from "./modules/cheat-logs/schema";
 import { cheatLogQueries } from "./modules/cheat-logs/queries";
 import { cheatLogMutations } from "./modules/cheat-logs/mutations";
+import { webcamLogTypeDefs } from "./modules/webcam-logs/schema";
+import { webcamLogQueries } from "./modules/webcam-logs/queries";
+import { webcamLogMutations } from "./modules/webcam-logs/mutations";
 
 export const typeDefs = `#graphql
   type Query { _: Boolean }
@@ -59,6 +62,7 @@ export const typeDefs = `#graphql
   ${examQuestionTypeDefs}
   ${examSqsTypeDefs}
     ${cheatLogTypeDefs}
+    ${webcamLogTypeDefs}
 `;
 
 export const resolvers = {
@@ -74,6 +78,7 @@ export const resolvers = {
     ...enrollmentQueries,
     ...examQuestionQueries,
     ...cheatLogQueries,
+    ...webcamLogQueries,
   },
   Mutation: {
     ...teacherMutations,
@@ -88,6 +93,7 @@ export const resolvers = {
     ...examQuestionMutations,
     ...examSqsMutations,
     ...cheatLogMutations,
+    ...webcamLogMutations,
   },
   Course: relationResolvers.Course,
   Exam: relationResolvers.Exam,
