@@ -199,7 +199,7 @@ export function ActiveExams() {
   }, [activeExams.length, error, isLoading]);
 
   return (
-    <Card className="shadow-[0_1px_4px_rgba(0,0,0,0.06)] border-[#e8eef4]">
+    <Card className="shadow-[0_1px_4px_rgba(0,0,0,0.06)] border-[#e8eef4] h-full flex flex-col">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -210,12 +210,14 @@ export function ActiveExams() {
               {headerSubtitle}
             </p>
           </div>
-          <button className="text-[12px] text-[#31A8E0] font-semibold hover:underline">
-            Бүгдийг харах →
-          </button>
+          <Link href="/monitoring">
+            <button className="text-[12px] text-[#31A8E0] font-semibold hover:underline">
+              Бүгдийг харах →
+            </button>
+          </Link>
         </div>
       </CardHeader>
-      <CardContent className="px-5 pb-5 pt-4 flex flex-col gap-3">
+      <CardContent className="px-5 pb-5 pt-4 flex flex-1 flex-col gap-3">
         {isLoading ? (
           <div className="text-[12px] text-[#8a9bb0] py-2">
             Ачааллаж байна...
@@ -230,16 +232,16 @@ export function ActiveExams() {
             const Icon = hasViolations ? Monitor : Info;
             const iconBg = hasViolations
               ? "bg-[#31A8E0]/10"
-              : "bg-[#27ae60]/10";
+              : "bg-[#31A8E0]/10";
             const iconColor = hasViolations
               ? "text-[#31A8E0]"
-              : "text-[#27ae60]";
+              : "text-[#31A8E0]";
             const violationsColor = hasViolations
               ? "text-red-500"
-              : "text-[#27ae60]";
+              : "text-[#31A8E0]";
             const btnBg = hasViolations
               ? "bg-[#31A8E0] hover:bg-[#1fa8bb]"
-              : "bg-[#27ae60] hover:bg-[#219a52]";
+              : "bg-[#31A8E0] hover:bg-[#31A8E0]/90";
 
             return (
               <div

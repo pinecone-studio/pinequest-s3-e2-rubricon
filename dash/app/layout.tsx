@@ -27,12 +27,15 @@ export default function RootLayout({
         className={`${inter.className} h-full antialiased`}
       >
         <body className="min-h-screen bg-[#f0f4f8]">
-          <div className="w-full max-w-[1440px] mx-auto">
-            <div className="flex min-h-screen">
-              <Sidebar />
-              <main className="flex flex-col flex-1">{children}</main>
-            </div>
+          <Sidebar />
+
+          {/* Sidebar-н зай үлдээгээд, үлдсэн хэсгийн дотор main-аа 1440px төвлөрүүлнэ */}
+          <div className="min-h-screen pl-[220px]">
+            <main className="w-full max-w-[1440px] mx-auto flex flex-col">
+              {children}
+            </main>
           </div>
+
           <Toaster position="top-center" />
         </body>
       </html>

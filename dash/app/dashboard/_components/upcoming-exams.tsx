@@ -1,63 +1,220 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { graphqlRequest } from "@/lib/graphql";
 
-const upcoming = [
-  {
-    day: "МЯГ",
-    time: "14:30",
-    dayStyle: "text-[#31A8E0]",
-    dotColor: "bg-[#f0a500]",
-    name: "Математик анализ IV",
-    meta: "MATH-402 · 56 оюутан",
-  },
-  {
-    day: "ЛХА",
-    time: "Маргааш",
-    dayStyle: "text-[#27ae60]",
-    dotColor: "bg-[#31A8E0]",
-    name: "Харагдлын физик",
-    meta: "PHYS-301 · 38 оюутан",
-  },
-  {
-    day: "БАА",
-    time: "10:00",
-    dayStyle: "text-[#8a9bb0]",
-    dotColor: "bg-[#8a9bb0]",
-    name: "Алгоритм дизайн",
-    meta: "CS-211 · 72 оюутан",
-  },
-];
+const EXAMS_QUERY = `#graphql
+  query DashboardUpcomingExams {
+    exams {
+      id
+      title
+      start_time
+      course_id
+      course {
+        id
+        code
+        name
+      }
+    }
+  }
+`;
+
+const ENROLLMENTS_QUERY = `#graphql
+  query DashboardUpcomingEnrollments {
+    enrollments {
+      id
+      student_id
+      course_id
+    }
+  }
+`;
+
+type GqlExam = {
+  id: string;
+  title: string | null;
+  start_time: string;
+  course_id: string | null;
+  course: {
+    id: string;
+    code: string | null;
+    name: string | null;
+  } | null;
+};
+
+type GqlEnrollment = {
+  id: string;
+  student_id: string;
+  course_id: string;
+};
+
+type UpcomingItem = {
+  id: string;
+  day: string;
+  time: string;
+  dayStyle: string;
+  dotColor: string;
+  name: string;
+  meta: string;
+};
+
+const DAY_STYLES = [
+  "text-[#31A8E0]",
+  "text-[#27ae60]",
+  "text-[#8a9bb0]",
+] as const;
+const DOT_COLORS = ["bg-[#f0a500]", "bg-[#31A8E0]", "bg-[#8a9bb0]"] as const;
+
+function formatDayShort(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "--";
+  return d
+    .toLocaleDateString("mn-MN", { weekday: "short" })
+    .replace(".", "")
+    .toUpperCase();
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "--:--";
+  return d.toLocaleTimeString("mn-MN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
 
 export function UpcomingExams() {
+  const [items, setItems] = useState<UpcomingItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [examData, enrollmentData] = await Promise.all([
+          graphqlRequest<{ exams: GqlExam[] | null }>(EXAMS_QUERY),
+          graphqlRequest<{ enrollments: GqlEnrollment[] | null }>(
+            ENROLLMENTS_QUERY,
+          ),
+        ]);
+
+        const exams = examData.exams ?? [];
+        const enrollments = enrollmentData.enrollments ?? [];
+        const now = Date.now();
+
+        const studentsByCourse = new Map<string, Set<string>>();
+        for (const enr of enrollments) {
+          const set = studentsByCourse.get(enr.course_id) ?? new Set<string>();
+          set.add(enr.student_id);
+          studentsByCourse.set(enr.course_id, set);
+        }
+
+        const upcoming = exams
+          .filter((e) => {
+            const startMs = new Date(e.start_time).getTime();
+            return !Number.isNaN(startMs) && startMs > now;
+          })
+          .sort(
+            (a, b) =>
+              new Date(a.start_time).getTime() -
+              new Date(b.start_time).getTime(),
+          )
+          .slice(0, 3)
+          .map((e, idx) => {
+            const studentCount = e.course_id
+              ? (studentsByCourse.get(e.course_id)?.size ?? 0)
+              : 0;
+
+            const courseCode = e.course?.code ?? "COURSE";
+            const courseName = e.course?.name ?? "Нэргүй хичээл";
+
+            return {
+              id: e.id,
+              day: formatDayShort(e.start_time),
+              time: formatTime(e.start_time),
+              dayStyle: DAY_STYLES[idx % DAY_STYLES.length],
+              dotColor: DOT_COLORS[idx % DOT_COLORS.length],
+              name: e.title ?? "Нэргүй шалгалт",
+              meta: `${courseCode} · ${courseName} · ${studentCount} оюутан`,
+            };
+          });
+
+        if (!cancelled) setItems(upcoming);
+      } catch (e) {
+        if (!cancelled) {
+          setError(
+            e instanceof Error ? e.message : "Шалгалтын мэдээлэл ачаалсангүй",
+          );
+          setItems([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const subtitle = useMemo(() => {
+    if (loading) return "Ачааллаж байна...";
+    if (error) return "Мэдээлэл ачаалж чадсангүй";
+    if (items.length === 0) return "Төлөвлөгдсөн шалгалт алга";
+    return "Хуваарийн дагуу";
+  }, [loading, error, items.length]);
+
   return (
-    <Card className="shadow-[0_1px_4px_rgba(0,0,0,0.06)] border-[#e8eef4]">
+    <Card className="shadow-[0_1px_4px_rgba(0,0,0,0.06)] border-[#e8eef4] h-full flex flex-col">
       <CardHeader className="pb-0 pt-5 px-5">
         <CardTitle className="text-[14px] font-bold text-[#2c3e50]">
           Удахгүй болох шалгалт
         </CardTitle>
-        <p className="text-[11.5px] text-[#8a9bb0] mt-0.5">Хуваарийн дагуу</p>
+        <p className="text-[11.5px] text-[#8a9bb0] mt-0.5">{subtitle}</p>
       </CardHeader>
-      <CardContent className="px-5 pb-5 pt-3 flex flex-col divide-y divide-[#e8eef4]">
-        {upcoming.map((u, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
-          >
-            <div
-              className={cn("text-center min-w-[44px] shrink-0", u.dayStyle)}
-            >
-              <p className="text-[10px] font-bold uppercase">{u.day}</p>
-              <p className="text-[13px] font-bold">{u.time}</p>
-            </div>
-            <div className={cn("w-2 h-2 rounded-full shrink-0", u.dotColor)} />
-            <div>
-              <p className="text-[13px] font-semibold text-[#2c3e50]">
-                {u.name}
-              </p>
-              <p className="text-[11px] text-[#8a9bb0] mt-0.5">{u.meta}</p>
-            </div>
+
+      <CardContent className="px-5 pb-5 pt-3 flex flex-1 flex-col divide-y divide-[#e8eef4]">
+        {loading ? (
+          <div className="py-2.5 text-[12px] text-[#8a9bb0]">
+            Ачааллаж байна...
           </div>
-        ))}
+        ) : items.length === 0 ? (
+          <div className="py-2.5 text-[12px] text-[#8a9bb0]">
+            Удахгүй эхлэх шалгалт олдсонгүй
+          </div>
+        ) : (
+          items.map((u) => (
+            <div
+              key={u.id}
+              className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+            >
+              <div
+                className={cn("text-center min-w-[44px] shrink-0", u.dayStyle)}
+              >
+                <p className="text-[10px] font-bold uppercase">{u.day}</p>
+                <p className="text-[13px] font-bold">{u.time}</p>
+              </div>
+              <div
+                className={cn("w-2 h-2 rounded-full shrink-0", u.dotColor)}
+              />
+              <div>
+                <p className="text-[13px] font-semibold text-[#2c3e50]">
+                  {u.name}
+                </p>
+                <p className="text-[11px] text-[#8a9bb0] mt-0.5">{u.meta}</p>
+              </div>
+            </div>
+          ))
+        )}
       </CardContent>
     </Card>
   );

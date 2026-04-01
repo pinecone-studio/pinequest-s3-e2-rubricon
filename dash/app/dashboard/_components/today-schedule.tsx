@@ -18,7 +18,7 @@ const slots = [
 
 export function TodaySchedule() {
   return (
-    <Card className="shadow-[0_1px_4px_rgba(0,0,0,0.06)] border-[#e8eef4]">
+    <Card className="shadow-[0_1px_4px_rgba(0,0,0,0.06)] border-[#e8eef4] w-full">
       <CardHeader className="pb-0 pt-5 px-5">
         <CardTitle className="text-[14px] font-bold text-[#2c3e50]">
           Өнөөдрийн хуваарь
