@@ -42,8 +42,8 @@ export function AIQuestionWizard({ onBack }: AIQuestionWizardProps) {
 
       const data = await response.json();
       setResult(data.aiCorrected); // AI-аар зассан текстийг авч байна
-    } catch (err: any) {
-      setError(err.message || "Алдаа гарлаа");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Алдаа гарлаа");
     } finally {
       setLoading(false);
     }

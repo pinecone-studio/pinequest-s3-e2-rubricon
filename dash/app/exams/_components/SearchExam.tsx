@@ -1,5 +1,6 @@
 import { Input } from "@base-ui/react";
 import { Search } from "lucide-react";
+import type { ChangeEvent } from "react";
 
 interface SearchExamProps {
   value: string;
@@ -18,7 +19,9 @@ export const SearchExam = ({ value, onChange }: SearchExamProps) => {
           placeholder="Search exams..."
           className="pl-10 bg-white h-9 rounded-sm"
           value={value}
-          onChange={(e: any) => onChange(e.target.value)}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onChange(e.target.value)
+          }
         />
       </div>
     </div>

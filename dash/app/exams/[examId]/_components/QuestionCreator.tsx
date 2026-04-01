@@ -33,7 +33,12 @@ const ADD_MUTATION = `#graphql
   }
 `;
 
-function parsedToDraft(p: any): ExamQuestionDraft {
+type ParsedQuestion = {
+  text?: string;
+  options?: string[];
+};
+
+function parsedToDraft(p: ParsedQuestion): ExamQuestionDraft {
   const options = ["", "", "", "", ""] as [string, string, string, string, string];
   if (p.options && Array.isArray(p.options)) {
     p.options.slice(0, 5).forEach((opt: string, idx: number) => {
@@ -114,8 +119,8 @@ export function QuestionCreator({ examId, onSaved }: { examId: string; onSaved: 
         setRawText(data.aiCorrected || "");
         setActiveTab("text");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Оруулж чадсангүй");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Оруулж чадсангүй");
     } finally {
       setLoadingOcr(false);
     }
