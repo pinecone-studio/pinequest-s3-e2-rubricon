@@ -13,6 +13,7 @@
     "@as-integrations/next": "^4.1.0",
     "@aws-sdk/client-sqs": "^3.1019.0",
     "@supabase/supabase-js": "^2.100.0",
+    "@upstash/redis": "^1.37.0",
     "graphql": "^16.13.2",
     "next": "16.2.1",
     "openai": "^6.33.0",
