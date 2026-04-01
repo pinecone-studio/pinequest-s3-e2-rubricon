@@ -1,4 +1,5 @@
 import { pickDefined } from "@/graphql/shared";
+import { normalizeAppDateTimeInput } from "@/lib/date-time";
 import { supabase } from "@/lib/supabase";
 
 const OPTION_COUNT = 5;
@@ -55,9 +56,15 @@ type CreateExamArgs = {
 
 export const examMutations = {
   createExam: async (_: unknown, args: CreateExamArgs) => {
+    const payload = {
+      ...args,
+      start_time: normalizeAppDateTimeInput(args.start_time),
+      end_time: normalizeAppDateTimeInput(args.end_time),
+    };
+
     const { data, error } = await supabase
       .from("exams")
-      .insert([args])
+      .insert([payload])
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -78,10 +85,15 @@ export const examMutations = {
     },
   ) => {
     const { questions, ...examPayload } = args;
+    const normalizedExamPayload = {
+      ...examPayload,
+      start_time: normalizeAppDateTimeInput(examPayload.start_time),
+      end_time: normalizeAppDateTimeInput(examPayload.end_time),
+    };
 
     const { data: exam, error: examError } = await supabase
       .from("exams")
-      .insert([examPayload])
+      .insert([normalizedExamPayload])
       .select()
       .single();
 
@@ -166,8 +178,8 @@ export const examMutations = {
       course_id: examFields.course_id,
       title: examFields.title.trim(),
       description: examFields.description?.trim() ?? null,
-      start_time: examFields.start_time,
-      end_time: examFields.end_time,
+      start_time: normalizeAppDateTimeInput(examFields.start_time),
+      end_time: normalizeAppDateTimeInput(examFields.end_time),
       duration: examFields.duration,
       type: examFields.type,
       image_url: examFields.image_url,
@@ -304,8 +316,12 @@ export const examMutations = {
       course_id: args.course_id,
       title: args.title,
       description: args.description,
-      start_time: args.start_time,
-      end_time: args.end_time,
+      start_time: args.start_time
+        ? normalizeAppDateTimeInput(args.start_time)
+        : undefined,
+      end_time: args.end_time
+        ? normalizeAppDateTimeInput(args.end_time)
+        : undefined,
       duration: args.duration,
       type: args.type,
       image_url: args.image_url,

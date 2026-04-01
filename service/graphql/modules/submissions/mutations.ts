@@ -1,5 +1,6 @@
 import { pickDefined } from "@/graphql/shared";
 import { supabase } from "@/lib/supabase";
+import { parseAppDateTime } from "@/lib/date-time";
 
 type SubmissionStatus = "in_progress" | "submitted" | "reviewed";
 
@@ -28,14 +29,6 @@ function isValidTransition(
   return false;
 }
 
-function parseDate(value: string, field: string): Date {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) {
-    throw new Error(`Invalid ${field}`);
-  }
-  return d;
-}
-
 function computeEffectiveEnd(
   startedAt: Date,
   examEnd: Date,
@@ -57,8 +50,8 @@ async function getExamTiming(examId: string) {
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Exam not found");
 
-  const start = parseDate(data.start_time, "exam start_time");
-  const end = parseDate(data.end_time, "exam end_time");
+  const start = parseAppDateTime(data.start_time, "exam start_time");
+  const end = parseAppDateTime(data.end_time, "exam end_time");
   const duration = Number(data.duration ?? 0);
 
   if (duration <= 0) throw new Error("Exam duration must be greater than 0");
@@ -81,7 +74,10 @@ async function maybeAutoSubmitExpiredSubmission(
   }
 
   const { end, duration } = await getExamTiming(current.exam_id);
-  const startedAt = parseDate(current.started_at, "submission started_at");
+  const startedAt = parseAppDateTime(
+    current.started_at,
+    "submission started_at",
+  );
   const effectiveEnd = computeEffectiveEnd(startedAt, end, duration);
   const now = new Date();
 
