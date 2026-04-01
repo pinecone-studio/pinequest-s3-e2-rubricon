@@ -63,7 +63,6 @@ type ParsedQuestion = {
   options?: string[];
 };
 
-function parsedToDraft(p: ParsedQuestion): ExamQuestionDraft {
 const ADD_OPEN_ENDED_MUTATION = `#graphql
   mutation AddOpenEndedQuestion(
     $exam_id: String!
@@ -87,7 +86,13 @@ const ADD_OPEN_ENDED_MUTATION = `#graphql
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 function parsedToDraft(p: any): ExamQuestionDraft {
-  const options = ["", "", "", "", ""] as [string, string, string, string, string];
+  const options = ["", "", "", "", ""] as [
+    string,
+    string,
+    string,
+    string,
+    string,
+  ];
   if (p.options && Array.isArray(p.options)) {
     p.options.slice(0, 5).forEach((opt: string, idx: number) => {
       options[idx] = opt;
@@ -115,9 +120,13 @@ export function QuestionCreator({
   const [activeTab, setActiveTab] = useState("manual");
 
   // Multiple-choice draft state
-  const [drafts, setDrafts] = useState<ExamQuestionDraft[]>([createEmptyQuestion()]);
+  const [drafts, setDrafts] = useState<ExamQuestionDraft[]>([
+    createEmptyQuestion(),
+  ]);
   const [saving, setSaving] = useState(false);
-  const [uploadingByDraft, setUploadingByDraft] = useState<Record<string, boolean>>({});
+  const [uploadingByDraft, setUploadingByDraft] = useState<
+    Record<string, boolean>
+  >({});
   const hasUploading = Object.values(uploadingByDraft).some(Boolean);
 
   // OCR / text-parse state
@@ -154,7 +163,9 @@ export function QuestionCreator({
     setDrafts(newDrafts);
   };
 
-  const handleOcrUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleOcrUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     setLoadingOcr(true);
@@ -163,14 +174,17 @@ export function QuestionCreator({
     try {
       const response = await fetch(
         "https://tesseract-provider-production.up.railway.app/ocr",
-        { method: "POST", body: formData }
+        { method: "POST", body: formData },
       );
       if (!response.ok) throw new Error("Сервертэй холбогдоход алдаа гарлаа.");
       const data = await response.json();
       const parsed = parseRawTextToQuestions(data.aiCorrected || "");
       const newDrafts = parsed.map(parsedToDraft);
       if (newDrafts.length > 0) {
-        setDrafts([...drafts.filter((d) => d.content.trim() !== ""), ...newDrafts]);
+        setDrafts([
+          ...drafts.filter((d) => d.content.trim() !== ""),
+          ...newDrafts,
+        ]);
         toast.success(`${newDrafts.length} асуулт танигдлаа.`);
         setActiveTab("manual");
       } else {
@@ -189,7 +203,10 @@ export function QuestionCreator({
     const parsed = parseRawTextToQuestions(rawText);
     const newDrafts = parsed.map(parsedToDraft);
     if (newDrafts.length > 0) {
-      setDrafts([...drafts.filter((d) => d.content.trim() !== ""), ...newDrafts]);
+      setDrafts([
+        ...drafts.filter((d) => d.content.trim() !== ""),
+        ...newDrafts,
+      ]);
       setRawText("");
       setActiveTab("manual");
       toast.success(`${newDrafts.length} асуулт хөрвүүлэгдлээ.`);
@@ -200,7 +217,9 @@ export function QuestionCreator({
 
   const handleSaveAll = async () => {
     if (hasUploading) {
-      toast.error("Зураг upload дуусаагүй байна. Түр хүлээгээд дахин оролдоно уу.");
+      toast.error(
+        "Зураг upload дуусаагүй байна. Түр хүлээгээд дахин оролдоно уу.",
+      );
       return;
     }
     for (let j = 0; j < drafts.length; j++) {
@@ -284,26 +303,43 @@ export function QuestionCreator({
       <div className="px-6 py-4 border-b border-slate-100">
         <h3 className="text-base font-semibold text-slate-900">Асуулт нэмэх</h3>
         <p className="text-sm text-slate-500 mt-0.5">
-          Тест (A/B/C/D/E), задгай даалгавар, зургаас таних, эсвэл текстээс хөрвүүлэх
+          Тест (A/B/C/D/E), задгай даалгавар, зургаас таних, эсвэл текстээс
+          хөрвүүлэх
         </p>
       </div>
 
       <div className="p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full mb-6"
+        >
           <TabsList className="grid w-full grid-cols-4 bg-slate-100/80 p-1 rounded-xl h-auto">
-            <TabsTrigger value="manual" className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all">
+            <TabsTrigger
+              value="manual"
+              className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+            >
               <Plus className="size-4 mr-1.5" />
               Тест
             </TabsTrigger>
-            <TabsTrigger value="open" className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all">
+            <TabsTrigger
+              value="open"
+              className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+            >
               <AlignLeft className="size-4 mr-1.5" />
               Задгай
             </TabsTrigger>
-            <TabsTrigger value="ocr" className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all">
+            <TabsTrigger
+              value="ocr"
+              className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+            >
               <UploadCloud className="size-4 mr-1.5" />
               Зургаас
             </TabsTrigger>
-            <TabsTrigger value="text" className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all">
+            <TabsTrigger
+              value="text"
+              className="py-2 text-sm rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+            >
               <FileText className="size-4 mr-1.5" />
               Текстээс
             </TabsTrigger>
@@ -313,9 +349,11 @@ export function QuestionCreator({
           <TabsContent value="open" className="mt-4">
             <div className="space-y-4">
               <div>
-                <Label className="text-sm font-medium text-slate-700">Асуултын текст</Label>
+                <Label className="text-sm font-medium text-slate-700">
+                  Асуултын текст
+                </Label>
                 <Textarea
-                  className="mt-1 resize-none min-h-[100px] rounded-xl border-slate-200 text-sm"
+                  className="mt-1 resize-none min-h-25 rounded-xl border-slate-200 text-sm"
                   placeholder="Оюутнаас бичгээр хариулт авах асуултаа бичнэ үү...&#10;Жишээ: Монгол улсын нийслэл хотын тухай товч бичнэ үү."
                   value={oeContent}
                   onChange={(e) => setOeContent(e.target.value)}
@@ -326,8 +364,14 @@ export function QuestionCreator({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-sm font-medium text-slate-700">Хэцүүн</Label>
-                  <Select value={oeDifficulty} onValueChange={setOeDifficulty} disabled={oeSaving}>
+                  <Label className="text-sm font-medium text-slate-700">
+                    Хэцүүн
+                  </Label>
+                  <Select
+                    value={oeDifficulty}
+                    onValueChange={setOeDifficulty}
+                    disabled={oeSaving}
+                  >
                     <SelectTrigger className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
@@ -339,7 +383,9 @@ export function QuestionCreator({
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-slate-700">Дээд оноо</Label>
+                  <Label className="text-sm font-medium text-slate-700">
+                    Дээд оноо
+                  </Label>
                   <Input
                     type="number"
                     min={1}
@@ -357,12 +403,18 @@ export function QuestionCreator({
               <div>
                 <Label className="text-sm font-medium text-slate-700">
                   Зураг{" "}
-                  <span className="text-slate-400 font-normal">(заавал биш)</span>
+                  <span className="text-slate-400 font-normal">
+                    (заавал биш)
+                  </span>
                 </Label>
                 <div className="mt-2 flex items-center gap-3">
                   {oeImageUrl ? (
                     <div className="relative size-24 rounded-xl border border-slate-200 overflow-hidden shadow-sm group">
-                      <img src={oeImageUrl} alt="" className="size-full object-cover" />
+                      <img
+                        src={oeImageUrl}
+                        alt=""
+                        className="size-full object-cover"
+                      />
                       <button
                         type="button"
                         onClick={() => setOeImageUrl(null)}
@@ -374,7 +426,9 @@ export function QuestionCreator({
                   ) : (
                     <label className="flex flex-col items-center justify-center size-24 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 cursor-pointer hover:border-blue-300 hover:bg-blue-50/60 transition-all">
                       <ImageIcon className="size-5 text-slate-400" />
-                      <span className="text-[10px] text-slate-500 mt-1 font-medium">Зураг нэмэх</span>
+                      <span className="text-[10px] text-slate-500 mt-1 font-medium">
+                        Зураг нэмэх
+                      </span>
                       <input
                         type="file"
                         accept="image/*"
@@ -407,10 +461,10 @@ export function QuestionCreator({
 
               {/* Info note */}
               <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-100">
-                <AlignLeft className="size-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                <AlignLeft className="size-4 text-amber-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-700 leading-relaxed">
-                  Задгай даалгавраар оюутнуудаас бичгээр хариулт авна.
-                  Хариулт нь автоматаар шалгагдахгүй — багш гараар дүгнэлт өгнө.
+                  Задгай даалгавраар оюутнуудаас бичгээр хариулт авна. Хариулт
+                  нь автоматаар шалгагдахгүй — багш гараар дүгнэлт өгнө.
                 </p>
               </div>
 
@@ -435,7 +489,9 @@ export function QuestionCreator({
           <TabsContent value="ocr" className="mt-4">
             <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-8 text-center hover:border-blue-300 hover:bg-blue-50/40 transition-colors">
               <UploadCloud className="size-10 text-slate-400 mx-auto mb-3" />
-              <p className="font-medium text-slate-700 mb-1">Зургаас асуулт таних</p>
+              <p className="font-medium text-slate-700 mb-1">
+                Зургаас асуулт таних
+              </p>
               <p className="text-sm text-slate-500 mb-4">
                 Шалгалтын материалын зургийг оруулахад автоматаар асуулт болгоно
               </p>
@@ -456,7 +512,9 @@ export function QuestionCreator({
                   className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <span>
-                    {loadingOcr && <Loader2 className="mr-2 size-4 animate-spin" />}
+                    {loadingOcr && (
+                      <Loader2 className="mr-2 size-4 animate-spin" />
+                    )}
                     {loadingOcr ? "Тайлж байна..." : "Зураг сонгох"}
                   </span>
                 </Button>
@@ -471,8 +529,10 @@ export function QuestionCreator({
                 Дугаарласан асуулт болон хариултуудаа энд бичнэ үү:
               </p>
               <Textarea
-                placeholder={"1. Монгол улсын нийслэл?\na) Улаанбаатар\nb) Дархан\nc) Эрдэнэт\nd) Ховд\ne) Дорнод\n\n2. Дараагийн асуулт..."}
-                className="min-h-[180px] bg-white text-sm resize-none border-slate-200 rounded-lg"
+                placeholder={
+                  "1. Монгол улсын нийслэл?\na) Улаанбаатар\nb) Дархан\nc) Эрдэнэт\nd) Ховд\ne) Дорнод\n\n2. Дараагийн асуулт..."
+                }
+                className="min-h-45 bg-white text-sm resize-none border-slate-200 rounded-lg"
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
               />
@@ -495,7 +555,9 @@ export function QuestionCreator({
         </Tabs>
 
         {/* ── MC Draft Questions (only shown on manual/import tabs) ── */}
-        {(activeTab === "manual" || activeTab === "ocr" || activeTab === "text") && (
+        {(activeTab === "manual" ||
+          activeTab === "ocr" ||
+          activeTab === "text") && (
           <div className="space-y-4">
             {drafts.map((draft, idx) => (
               <ExamQuestionCard
@@ -506,7 +568,10 @@ export function QuestionCreator({
                 onRemove={() => handleRemoveDraft(idx)}
                 canRemove={drafts.length > 1}
                 onUploadStateChange={(isUploading) =>
-                  setUploadingByDraft((prev) => ({ ...prev, [draft.id]: isUploading }))
+                  setUploadingByDraft((prev) => ({
+                    ...prev,
+                    [draft.id]: isUploading,
+                  }))
                 }
               />
             ))}
@@ -527,7 +592,7 @@ export function QuestionCreator({
                     variant="ghost"
                     size="icon"
                     title="Бүгдийг устгах"
-                    className="h-9 w-9 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg flex-shrink-0"
+                    className="h-9 w-9 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg shrink-0"
                     onClick={clearDrafts}
                   >
                     <Trash2 className="size-4" />
