@@ -23,6 +23,7 @@ import type { PracticeHistoryEntry } from "./practiceTypes";
 type PracticeHistoryProps = {
   items: PracticeHistoryEntry[];
   loading: boolean;
+  className?: string;
 };
 
 const formatSubmittedAt = (value: string) => {
@@ -64,6 +65,7 @@ const formatSubmittedDateOnly = (value: string) => {
 export default function PracticeHistory({
   items,
   loading,
+  className,
 }: PracticeHistoryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<PracticeHistoryEntry | null>(
@@ -71,14 +73,14 @@ export default function PracticeHistory({
   );
 
   return (
-    <section className="mt-14">
+    <section className={cn("mt-14", className)}>
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
         className="group flex w-full items-center gap-4 py-4 text-left transition-all hover:cursor-pointer"
       >
-        <h2 className="whitespace-nowrap text-[16px] font-bold text-slate-800 transition-colors">
+        <h2 className="whitespace-nowrap text-base font-semibold text-slate-800 transition-colors">
           Бэлтгэлийн түүх
         </h2>
 
@@ -103,7 +105,7 @@ export default function PracticeHistory({
         className={cn(
           "grid transition-all duration-300 ease-out",
           isOpen
-            ? "mt-6 grid-rows-[1fr] opacity-100"
+            ? "mt-0 grid-rows-[1fr] opacity-100"
             : "grid-rows-[0fr] opacity-0",
         )}
       >

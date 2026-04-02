@@ -19,7 +19,7 @@ export default function GradesPageSkeleton() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Skeleton className="h-9 w-20" />
+              <Skeleton className="h-8 w-20" />
               <Skeleton className="h-3 w-24" />
             </CardContent>
           </Card>

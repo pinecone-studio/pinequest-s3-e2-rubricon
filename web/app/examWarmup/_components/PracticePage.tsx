@@ -335,7 +335,7 @@ export default function PracticePage() {
       {!session && isGenerating ? (
         <PracticePageSkeleton />
       ) : !session ? (
-        <>
+        <div className="space-y-4">
           <PracticeSetup
             exams={exams}
             examsLoading={examsLoading}
@@ -352,13 +352,21 @@ export default function PracticePage() {
             historyItems={historyItems}
             historyLoading={historyLoading}
             onStartPractice={startPractice}
+            contentClassName="grid gap-8 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)] xl:items-start"
+            sideContent={
+              <PracticeHistory
+                items={historyItems}
+                loading={historyLoading}
+                className="mt-0"
+              />
+            }
           />
           {generationError ? (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {generationError}
             </div>
           ) : null}
-        </>
+        </div>
       ) : !session.showResults ? (
         currentQuestion && (
           <PracticeQuestion
@@ -381,9 +389,6 @@ export default function PracticePage() {
         />
       )}
 
-      {!session ? (
-        <PracticeHistory items={historyItems} loading={historyLoading} />
-      ) : null}
     </div>
   );
 }
