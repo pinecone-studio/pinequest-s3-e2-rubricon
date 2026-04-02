@@ -61,18 +61,17 @@ type UpcomingItem = {
 
 const DAY_STYLES = [
   "text-[#31A8E0]",
-  "text-[#27ae60]",
-  "text-[#8a9bb0]",
+  "text-[#1F9D8B]",
+  "text-[#C27A17]",
 ] as const;
-const DOT_COLORS = ["bg-[#f0a500]", "bg-[#31A8E0]", "bg-[#8a9bb0]"] as const;
+const DOT_COLORS = ["bg-[#31A8E0]", "bg-[#1F9D8B]", "bg-[#C27A17]"] as const;
+
+const MN_WEEKDAY_SHORT = ["НЯ", "ДА", "МЯ", "ЛХ", "ПҮ", "БА", "БЯ"] as const;
 
 function formatDayShort(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "--";
-  return d
-    .toLocaleDateString("mn-MN", { weekday: "short" })
-    .replace(".", "")
-    .toUpperCase();
+  return MN_WEEKDAY_SHORT[d.getDay()];
 }
 
 function formatTime(iso: string): string {
@@ -175,14 +174,14 @@ export function UpcomingExams() {
 
   return (
     <Card className="shadow-[0_1px_4px_rgba(0,0,0,0.06)] border-[#e8eef4] h-full flex flex-col">
-      <CardHeader className="pb-0 pt-5 px-5">
+      <CardHeader>
         <CardTitle className="text-[14px] font-bold text-[#2c3e50]">
           Удахгүй болох шалгалт
         </CardTitle>
         <p className="text-[11.5px] text-[#8a9bb0] mt-0.5">{subtitle}</p>
       </CardHeader>
 
-      <CardContent className="px-5 pb-5 pt-3 flex flex-1 flex-col divide-y divide-[#e8eef4]">
+      <CardContent className="px-5 flex flex-1 flex-col divide-y divide-[#e8eef4]">
         {loading ? (
           <div className="py-2.5 text-[12px] text-[#8a9bb0]">
             Ачааллаж байна...
@@ -198,7 +197,7 @@ export function UpcomingExams() {
               className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
             >
               <div
-                className={cn("text-center min-w-[44px] shrink-0", u.dayStyle)}
+                className={cn("text-start min-w-[44px] shrink-0", u.dayStyle)}
               >
                 <p className="text-[10px] font-bold uppercase">{u.day}</p>
                 <p className="text-[13px] font-bold">{u.time}</p>

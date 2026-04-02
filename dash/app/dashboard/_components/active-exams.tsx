@@ -211,13 +211,13 @@ export function ActiveExams() {
             </p>
           </div>
           <Link href="/monitoring">
-            <button className="text-[12px] text-[#31A8E0] font-semibold hover:underline">
-              Бүгдийг харах →
+            <button className="text-[12px] text-[#31A8E0] font-semibold hover:text-[#317be0]">
+              Бүгдийг харах
             </button>
           </Link>
         </div>
       </CardHeader>
-      <CardContent className="px-5 pb-5 pt-4 flex flex-1 flex-col gap-3">
+      <CardContent className=" flex flex-1 flex-col gap-3">
         {isLoading ? (
           <div className="text-[12px] text-[#8a9bb0] py-2">
             Ачааллаж байна...
@@ -242,21 +242,21 @@ export function ActiveExams() {
             const Icon = hasViolations ? Monitor : Info;
             const iconBg = hasViolations
               ? "bg-[#31A8E0]/10"
-              : "bg-[#31A8E0]/10";
+              : "bg-[#2398cc]/10";
             const iconColor = hasViolations
               ? "text-[#31A8E0]"
-              : "text-[#31A8E0]";
+              : "text-[#2398cc]";
             const violationsColor = hasViolations
               ? "text-red-500"
-              : "text-[#31A8E0]";
+              : "text-[#C27A17]";
             const btnBg = hasViolations
               ? "bg-[#31A8E0] hover:bg-[#1fa8bb]"
-              : "bg-[#31A8E0] hover:bg-[#31A8E0]/90";
+              : "bg-[#31A8E0] hover:bg-[#2398cc]";
 
             return (
               <div
                 key={e.id ?? idx}
-                className="flex items-center gap-3 border border-[#e8eef4] rounded-xl px-4 py-3"
+                className="flex items-center gap-3 border border-[#e8eef4] rounded-xl p-4"
               >
                 <div
                   className={`w-[38px] h-[38px] rounded-[9px] ${iconBg} ${iconColor} flex items-center justify-center shrink-0`}
@@ -290,7 +290,7 @@ export function ActiveExams() {
                     size="sm"
                     className={`${btnBg} text-white text-[12px] font-semibold ml-2 whitespace-nowrap rounded-lg h-8 px-3 border-0`}
                   >
-                    Хяналт руу орох →
+                    Хяналт руу орох
                   </Button>
                 </Link>
               </div>

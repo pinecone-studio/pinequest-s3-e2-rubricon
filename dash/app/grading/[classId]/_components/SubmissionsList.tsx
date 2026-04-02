@@ -25,8 +25,14 @@ export const SubmissionsList = ({
 
   return (
     <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100">
+      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <h2 className="text-sm font-medium text-gray-700">Дараалал</h2>
+
+        <div className="grid grid-cols-[84px_120px_160px] items-center gap-3 text-[10px] uppercase tracking-wide text-gray-400">
+          <p className="text-center">Оноо</p>
+          <p className="text-center">Цаг</p>
+          <p className="text-center">Төлөв</p>
+        </div>
       </div>
 
       <div className="divide-y divide-gray-100">
@@ -48,28 +54,28 @@ export const SubmissionsList = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-xs text-gray-500">
-              <div className="flex flex-col gap-1 w-20">
-                <div className="flex items-center gap-1">
-                  <Clock size={14} strokeWidth={2.5} />
-                  {student.submittedAt}
-                </div>
-                {student.status === "Дүгнэгдсэн" &&
-                  student.finalScore !== null &&
-                  student.finalScore !== undefined && (
-                    <span className="font-medium text-gray-800">
-                      {student.finalScore}
-                    </span>
-                  )}
+            <div className="grid grid-cols-[84px_120px_160px] items-center gap-3 text-xs min-h-[56px]">
+              <div className="text-center">
+                <p className="text-sm font-semibold text-gray-800">
+                  {student.finalScore ?? "-"}
+                </p>
               </div>
-              <div className="w-36">
+
+              <div className="text-center">
+                <p className="inline-flex items-center justify-center gap-1 text-gray-600">
+                  <Clock size={13} strokeWidth={2.3} />
+                  {student.submittedAt || "-"}
+                </p>
+              </div>
+
+              <div className="text-center">
                 {student.status === "Дүгнэгдсэн" ? (
-                  <span className="flex items-center justify-center gap-1 text-xs font-medium text-[#1F9D8B] bg-[#E8F8F5] border border-[#BFEDE5] px-2.5 py-1 rounded-full">
+                  <span className="inline-flex items-center justify-center gap-1 text-xs font-medium text-[#1F9D8B] bg-[#E8F8F5] border border-[#BFEDE5] px-2.5 py-1 rounded-full min-w-[130px]">
                     <CircleCheckBig size={14} strokeWidth={2.5} />
                     Дүгнэгдсэн
                   </span>
                 ) : (
-                  <span className="flex justify-center items-center gap-1 text-xs font-medium text-[#C27A17] bg-[#FFF7E8] border border-[#F5D8A8] px-2.5 py-1 rounded-full">
+                  <span className="inline-flex items-center justify-center gap-1 text-xs font-medium text-[#C27A17] bg-[#FFF7E8] border border-[#F5D8A8] px-2.5 py-1 rounded-full min-w-[130px]">
                     <Clock size={14} strokeWidth={2.5} />
                     Хүлээгдэж байна
                   </span>

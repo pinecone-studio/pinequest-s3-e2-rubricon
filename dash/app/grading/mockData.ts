@@ -170,19 +170,17 @@ export async function fetchGradingClasses(): Promise<ClassCourse[]> {
     const graded = latestSubs.filter(
       (s) => s.final_score !== null && s.final_score !== undefined,
     ).length;
-
-    const pending = latestSubs.filter(
-      (s) => s.final_score === null || s.final_score === undefined,
-    ).length;
+    const total = classStudentIds.size;
+    const pending = Math.max(classStudentIds.size - graded, 0);
 
     return {
       id: c.id,
       code: c.code,
       name: c.name,
       assignmentLabel: c.exams?.[0]?.title ?? "Шалгалт",
+      total,
       pending,
       graded,
-      total: classStudentIds.size,
     };
   });
 }
@@ -385,7 +383,9 @@ export async function fetchStudentGradingContext(
           .filter((a) => Boolean(a.text_answer?.trim()))
           .map((a, idx) => ({
             id: String(a.question_id),
-            text: questionById.get(String(a.question_id))?.text ?? `Асуулт ${idx + 1}`,
+            text:
+              questionById.get(String(a.question_id))?.text ??
+              `Асуулт ${idx + 1}`,
             type: "written",
             order_index: idx,
           }));

@@ -144,13 +144,12 @@ export function LatestGrades() {
 
   return (
     <Card className="shadow-[0_1px_4px_rgba(0,0,0,0.06)] border-[#e8eef4] w-full">
-      <CardHeader className="pb-0 pt-5 px-5">
+      <CardHeader>
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-[14px] font-bold text-[#2c3e50]">
               Сүүлийн үнэлгээ
             </CardTitle>
-            <p className="text-[11.5px] text-[#8a9bb0] mt-0.5">{subtitle}</p>
           </div>
           <Link href="/grading">
             <button className="text-[12px] text-[#31A8E0] font-semibold hover:underline">
@@ -160,7 +159,7 @@ export function LatestGrades() {
         </div>
       </CardHeader>
 
-      <CardContent className="px-5 pb-5 pt-3 flex flex-col divide-y divide-[#e8eef4]">
+      <CardContent className="px-5 flex flex-col divide-y divide-[#e8eef4]">
         {loading ? (
           <div className="py-3 text-[12px] text-[#8a9bb0]">
             Ачааллаж байна...
@@ -176,8 +175,8 @@ export function LatestGrades() {
                 <g.icon className="w-3.5 h-3.5 text-[#31A8E0]" />
                 {g.title}
               </div>
-              <p className="text-[11px] text-[#8a9bb0]">{g.course}</p>
-              <p className="text-[12px] font-bold text-[#31A8E0] mt-0.5">
+              <p className="text-[12px] text-[#8a9bb0]">{g.course}</p>
+              <p className="text-[12px] font-semibold text-[#31A8E0] mt-0.5">
                 {g.score}
               </p>
             </div>
