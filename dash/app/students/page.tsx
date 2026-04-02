@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SlidersHorizontal, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { useStudents } from "./_hooks/useStudents";
 import StudentTable from "./_components/StudentTable";
@@ -142,9 +143,14 @@ export default function Page() {
 
         {hasAnyFilter && (
           <div className="flex flex-wrap gap-2 items-center">
+            <AnimatePresence initial={false}>
             {courseFilter.map((c) => (
-              <div
+              <motion.div
                 key={c}
+                initial={{ opacity: 0, scale: 0.92, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                transition={{ duration: 0.18 }}
                 className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
               >
                 <span>{c}</span>
@@ -156,12 +162,16 @@ export default function Page() {
                 >
                   <X className="h-3 w-3" />
                 </button>
-              </div>
+              </motion.div>
             ))}
 
             {classFilter.map((c) => (
-              <div
+              <motion.div
                 key={c}
+                initial={{ opacity: 0, scale: 0.92, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                transition={{ duration: 0.18 }}
                 className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
               >
                 <span>{c}</span>
@@ -173,12 +183,16 @@ export default function Page() {
                 >
                   <X className="h-3 w-3" />
                 </button>
-              </div>
+              </motion.div>
             ))}
 
             {majorFilter.map((m) => (
-              <div
+              <motion.div
                 key={m}
+                initial={{ opacity: 0, scale: 0.92, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                transition={{ duration: 0.18 }}
                 className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
               >
                 <span>{m}</span>
@@ -190,12 +204,16 @@ export default function Page() {
                 >
                   <X className="h-3 w-3" />
                 </button>
-              </div>
+              </motion.div>
             ))}
 
             {scoreFilter.map((s) => (
-              <div
+              <motion.div
                 key={s}
+                initial={{ opacity: 0, scale: 0.92, y: -4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                transition={{ duration: 0.18 }}
                 className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
               >
                 <span>Оноо: {s}</span>
@@ -207,8 +225,9 @@ export default function Page() {
                 >
                   <X className="h-3 w-3" />
                 </button>
-              </div>
+              </motion.div>
             ))}
+            </AnimatePresence>
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -232,7 +251,17 @@ export default function Page() {
             <StudentTable students={filteredItems} />
           </div>
         ) : (
-          <div className="rounded-2xl border bg-white p-5">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="rounded-2xl border bg-white p-5"
+          >
+            <motion.div
+              className="mb-2 h-2 w-2 rounded-full bg-blue-500"
+              animate={{ opacity: [0.35, 1, 0.35], scale: [1, 1.15, 1] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            />
             <p className="text-sm font-semibold text-slate-900">
               Илэрц олдсонгүй
             </p>
@@ -285,7 +314,7 @@ export default function Page() {
               <X className="h-4 w-4" />
               Нэг товшоод reset
             </button>
-          </div>
+          </motion.div>
         )}
 
         <AdvancedFilter

@@ -2,6 +2,7 @@
 
 import { useState, type KeyboardEvent } from "react";
 import { MoreHorizontal, Mail, Download } from "lucide-react";
+import { motion } from "framer-motion";
 
 import {
   DropdownMenu,
@@ -38,6 +39,7 @@ const getInitials = (name: string) =>
 const StudentTable = ({ students }: StudentTableProps) => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [open, setOpen] = useState(false);
+  const [headerElevated, setHeaderElevated] = useState(false);
 
   const handleView = (student: Student) => {
     setSelectedStudent(student);
@@ -118,10 +120,20 @@ const StudentTable = ({ students }: StudentTableProps) => {
   return (
     <TooltipProvider>
       <div className="rounded-2xl border bg-white overflow-hidden">
-        <div className="max-h-[70vh] overflow-auto">
+        <div
+          className="max-h-[70vh] overflow-auto"
+          onScroll={(e) => {
+            const target = e.currentTarget;
+            setHeaderElevated(target.scrollTop > 4);
+          }}
+        >
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b bg-white">
+              <tr
+                className={`border-b bg-white transition-shadow duration-200 ${
+                  headerElevated ? "shadow-[0_2px_10px_rgba(15,23,42,0.08)]" : ""
+                }`}
+              >
                 <th className="sticky top-0 z-10 bg-white px-6 py-4 text-sm font-semibold">
                   Оюутнууд
                 </th>
@@ -148,15 +160,18 @@ const StudentTable = ({ students }: StudentTableProps) => {
             </thead>
 
             <tbody>
-              {students.map((s) => {
+              {students.map((s, index) => {
                 return (
-                  <tr
+                  <motion.tr
                     key={s.id}
                     role="button"
                     tabIndex={0}
                     onClick={() => handleView(s)}
                     onKeyDown={(e) => handleKey(e, s)}
-                    className="group cursor-pointer transition hover:bg-gray-50"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.24, delay: index * 0.035 }}
+                    className="group cursor-pointer transition-all duration-200 ease-out hover:-translate-y-[1px] hover:bg-gray-50 hover:shadow-[inset_0_0_0_1px_rgba(148,163,184,0.15)]"
                   >
                     <td className="px-6 py-4">
                       <div className="flex gap-3 items-center">
@@ -272,7 +287,7 @@ const StudentTable = ({ students }: StudentTableProps) => {
                         </DropdownMenu>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })}
             </tbody>

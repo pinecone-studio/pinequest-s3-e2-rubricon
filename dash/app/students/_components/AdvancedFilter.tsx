@@ -72,7 +72,7 @@ export default function AdvancedFilter({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <TooltipProvider>
-        <DialogContent className="max-w-3xl overflow-hidden p-0 shadow-none">
+        <DialogContent className="max-w-3xl overflow-hidden p-0 shadow-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 duration-200">
           <div className="border-b border-white/10 bg-[linear-gradient(to_bottom,rgba(36,72,95,0.9)_0%,rgba(41,97,129,0.86)_48%,rgba(49,168,224,0.82)_100%)] px-6 py-5 text-white">
           <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
             <SlidersHorizontal className="h-5 w-5" />
