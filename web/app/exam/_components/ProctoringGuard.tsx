@@ -6,6 +6,7 @@ import {
 } from "@/hooks/use-proctoring-monitor";
 import { getSocket } from "@/lib/socket";
 import { useEffect, useMemo, useRef } from "react";
+import { useExamState } from "../_hooks/use-exam-states";
 import {
   EXAM_WARNING_CODES,
   useExamWarningTracker,
@@ -82,6 +83,7 @@ export function ProctoringWarnings({
 }
 
 export function ProctoringGuard() {
+  const { exam } = useExamState();
   const monitor = useProctorMonitor();
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const teacherPeerIdRef = useRef<string | null>(null);
@@ -90,7 +92,7 @@ export function ProctoringGuard() {
     if (monitor.error) return;
     if (!monitor.isReady || !monitor.streamRef.current) return;
 
-    const roomId = "exam-room-1";
+    const roomId = `exam-room-${exam.id}`;
     const socket = getSocket();
     const stream = monitor.streamRef.current;
 
@@ -185,7 +187,7 @@ export function ProctoringGuard() {
       pcRef.current = null;
       teacherPeerIdRef.current = null;
     };
-  }, [monitor.error, monitor.isReady, monitor.streamRef]);
+  }, [exam.id, monitor.error, monitor.isReady, monitor.streamRef]);
 
   return (
     <>
