@@ -36,9 +36,27 @@ const normalizeStudents = (students: Student[]): Student[] => {
   }));
 };
 
+const isStudentComplete = (student: Student) => {
+  const requiredTextFields = [student.className, student.course, student.examTitle];
+
+  const hasAllText = requiredTextFields.every(
+    (value) => typeof value === "string" && value.trim() !== "" && value.trim() !== "-"
+  );
+
+  const hasExamCount =
+    typeof student.examsTaken === "number" &&
+    Number.isFinite(student.examsTaken);
+  const hasViolationCount =
+    typeof student.violationCount === "number" &&
+    Number.isFinite(student.violationCount);
+
+  return hasAllText && hasExamCount && hasViolationCount;
+};
+
 export default function Page() {
   const { students, loading, error } = useStudents();
   const normalizedStudents = normalizeStudents(students);
+  const completeStudents = normalizedStudents.filter(isStudentComplete);
 
   const {
     searchQuery,
@@ -52,7 +70,7 @@ export default function Page() {
     scoreFilter,
     setScoreFilter,
     filteredItems,
-  } = useStudentSearch(normalizedStudents);
+  } = useStudentSearch(completeStudents);
 
   const [open, setOpen] = useState<boolean>(false);
   const activeFilterCount =
@@ -98,7 +116,7 @@ export default function Page() {
             <TooltipTrigger asChild>
               <button
                 onClick={() => setOpen(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-[linear-gradient(to_bottom,rgba(36,72,95,0.9)_0%,rgba(41,97,129,0.86)_48%,rgba(49,168,224,0.82)_100%)] px-4 py-2 text-white transition-all duration-200 ease-out hover:opacity-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/20 bg-[linear-gradient(to_bottom,rgba(36,72,95,0.9)_0%,rgba(41,97,129,0.86)_48%,rgba(49,168,224,0.82)_100%)] px-4 text-white transition-all duration-200 ease-out hover:opacity-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               >
                 <SlidersHorizontal className="h-4 w-4" />
                 Филтэр

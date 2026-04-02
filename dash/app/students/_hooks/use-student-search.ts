@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { transliterate } from "../utils/search-helper";
 
 export function useStudentSearch<
@@ -11,14 +11,23 @@ export function useStudentSearch<
   }
 >(items: T[]) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState<string[]>([]);
   const [classFilter, setClassFilter] = useState<string[]>([]);
   const [majorFilter, setMajorFilter] = useState<string[]>([]);
   const [scoreFilter, setScoreFilter] = useState<string[]>([]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      const query = searchQuery.toLowerCase();
+      const query = debouncedSearchQuery.toLowerCase();
 
       const matchesName =
         !query ||
@@ -55,7 +64,14 @@ export function useStudentSearch<
         matchesScore
       );
     });
-  }, [items, searchQuery, courseFilter, classFilter, majorFilter, scoreFilter]);
+  }, [
+    items,
+    debouncedSearchQuery,
+    courseFilter,
+    classFilter,
+    majorFilter,
+    scoreFilter,
+  ]);
 
   return {
     searchQuery,

@@ -120,17 +120,18 @@ const StudentTable = ({ students }: StudentTableProps) => {
   return (
     <TooltipProvider>
       <div className="rounded-2xl border bg-white overflow-hidden">
+        <div className="max-h-[70vh] overflow-auto">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b bg-white">
-              <th className="px-6 py-4 text-sm font-semibold">Оюутанууд</th>
-              <th className="px-6 py-4 text-sm font-semibold">Анги</th>
-              <th className="px-6 py-4 text-sm font-semibold">Шалгалтын нэр</th>
-              <th className="px-6 py-4 text-sm font-semibold">Курс</th>
-              <th className="px-6 py-4 text-sm font-semibold">Шалгалтын тоо</th>
-              <th className="px-6 py-4 text-sm font-semibold">Зөрчилийн тоо</th>
-              <th className="px-6 py-4 text-sm font-semibold">Дүн</th>
-              <th></th>
+              <th className="sticky top-0 z-10 bg-white px-6 py-4 text-sm font-semibold">Оюутанууд</th>
+              <th className="sticky top-0 z-10 bg-white px-6 py-4 text-sm font-semibold">Анги</th>
+              <th className="sticky top-0 z-10 bg-white px-6 py-4 text-sm font-semibold">Шалгалтын нэр</th>
+              <th className="sticky top-0 z-10 bg-white px-6 py-4 text-sm font-semibold">Курс</th>
+              <th className="sticky top-0 z-10 bg-white px-6 py-4 text-sm font-semibold">Шалгалтын тоо</th>
+              <th className="sticky top-0 z-10 bg-white px-6 py-4 text-sm font-semibold">Зөрчилийн тоо</th>
+              <th className="sticky top-0 z-10 bg-white px-6 py-4 text-sm font-semibold">Дүн</th>
+              <th className="sticky top-0 z-10 bg-white"></th>
             </tr>
           </thead>
 
@@ -143,7 +144,7 @@ const StudentTable = ({ students }: StudentTableProps) => {
                   tabIndex={0}
                   onClick={() => handleView(s)}
                   onKeyDown={(e) => handleKey(e, s)}
-                  className="cursor-pointer transition hover:bg-gray-50"
+                  className="group cursor-pointer transition hover:bg-gray-50"
                 >
                   <td className="px-6 py-4">
                     <div className="flex gap-3 items-center">
@@ -181,65 +182,90 @@ const StudentTable = ({ students }: StudentTableProps) => {
                   </td>
 
                   <td className="px-6 py-4 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button
-                          title="Үйлдлүүд"
-                          onClick={(e) => e.stopPropagation()}
-                          className="rounded p-2 transition-all duration-200 ease-out hover:bg-gray-100 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                        >
-                          <MoreHorizontal className="h-5 w-5" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            sendEmail(s, "reminder");
-                          }}
-                          className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
-                        >
-                          <Mail className="w-4 h-4 mr-2" />
-                          И-мэйл (Санамж)
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            sendEmail(s, "score");
-                          }}
-                          className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
-                        >
-                          <Mail className="w-4 h-4 mr-2" />
-                          И-мэйл (Дүнгийн мэдээлэл)
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            sendEmail(s, "violation");
-                          }}
-                          className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
-                        >
-                          <Mail className="w-4 h-4 mr-2" />
-                          И-мэйл (Зөрчил анхааруулга)
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            downloadStudent(s);
-                          }}
-                          className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Татах
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center justify-end gap-1 opacity-100 transition-all duration-200 ease-out md:translate-x-1 md:opacity-0 md:group-hover:translate-x-0 md:group-hover:opacity-100 md:group-focus-within:translate-x-0 md:group-focus-within:opacity-100">
+                      <button
+                        title="И-мэйл (Санамж)"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          sendEmail(s, "reminder");
+                        }}
+                        className="rounded p-2 text-slate-600 transition-all duration-200 ease-out hover:bg-gray-100 hover:text-slate-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      >
+                        <Mail className="h-4 w-4" />
+                      </button>
+
+                      <button
+                        title="Татах"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          downloadStudent(s);
+                        }}
+                        className="rounded p-2 text-slate-600 transition-all duration-200 ease-out hover:bg-gray-100 hover:text-slate-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                      >
+                        <Download className="h-4 w-4" />
+                      </button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            title="Үйлдлүүд"
+                            onClick={(e) => e.stopPropagation()}
+                            className="rounded p-2 transition-all duration-200 ease-out hover:bg-gray-100 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                          >
+                            <MoreHorizontal className="h-5 w-5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              sendEmail(s, "reminder");
+                            }}
+                            className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
+                          >
+                            <Mail className="w-4 h-4 mr-2" />
+                            И-мэйл (Санамж)
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              sendEmail(s, "score");
+                            }}
+                            className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
+                          >
+                            <Mail className="w-4 h-4 mr-2" />
+                            И-мэйл (Дүнгийн мэдээлэл)
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              sendEmail(s, "violation");
+                            }}
+                            className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
+                          >
+                            <Mail className="w-4 h-4 mr-2" />
+                            И-мэйл (Зөрчил анхааруулга)
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                              downloadStudent(s);
+                            }}
+                            className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Татах
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        </div>
 
         {students.length === 0 && (
           <div className="p-6 text-center text-gray-500">Илэрц олдсонгүй</div>
