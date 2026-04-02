@@ -130,7 +130,7 @@ export default function ExamDashboard() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <SearchExam value={searchQuery} onChange={setSearchQuery} />
           <SearchTabs value={statusFilter} onValueChange={setStatusFilter} />
         </div>

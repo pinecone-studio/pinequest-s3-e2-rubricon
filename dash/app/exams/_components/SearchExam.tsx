@@ -16,7 +16,7 @@ export function SearchExam({ value, onChange }: SearchExamProps) {
       />
       <Input
         placeholder="Шалгалт хайх..."
-        className="pl-9 h-9 w-64 bg-white border-gray-200 text-sm rounded-md font-sans placeholder:text-gray-400"
+        className="pl-9 h-8 w-64 bg-white border-gray-200 text-sm rounded-md font-sans placeholder:text-gray-400"
         value={value}
         onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
       />

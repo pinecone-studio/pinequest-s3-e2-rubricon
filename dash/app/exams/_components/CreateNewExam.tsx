@@ -132,7 +132,7 @@ export const CreateNewExam = () => {
     const today = new Date();
     const dateStr = today.toISOString().split("T")[0];
     setExamDate(dateStr);
-    setExamTime("14:00");
+    setExamTime("18:00");
     setDurationMinutes("90");
     toast.info("Демо өгөгдлөөр бөглөлөө.");
   };
@@ -413,7 +413,7 @@ export const CreateNewExam = () => {
               <Button
                 type="button"
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white min-w-27.5"
+                className="bg-[#31A8E0] hover:bg-[#2398cc] text-white min-w-27.5"
                 onClick={() => void handleCreateShell()}
                 disabled={saving}
               >

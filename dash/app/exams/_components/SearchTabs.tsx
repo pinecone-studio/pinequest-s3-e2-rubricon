@@ -11,9 +11,9 @@ export const SearchTabs = ({ value, onValueChange }: SearchTabsProps) => {
       defaultValue="all"
       value={value}
       onValueChange={onValueChange}
-      className="h-10"
+      className="h-10 flex items-center justify-center"
     >
-      <TabsList className="gap-2 p-0 h-9">
+      <TabsList className="gap-2 p-0 h-8">
         <TabsTrigger
           value="all"
           className="data-[state=active]:bg-white border rounded-md px-4 py-1.5"

@@ -287,15 +287,15 @@ export default function ExamDetailPage() {
               {exam.title}
             </h1>
             {exam.course && (
-              <p className="mt-1 text-sm font-medium text-blue-600">
+              <p className="mt-1 text-sm font-medium ">
                 {exam.course.code} · {exam.course.name}
               </p>
             )}
-            {exam.description && (
+            {/* {exam.description && (
               <p className="mt-3 text-sm text-slate-600 leading-relaxed">
                 {exam.description}
               </p>
-            )}
+            )} */}
           </div>
           <div className="border-t border-slate-100 grid grid-cols-3 divide-x divide-slate-100">
             <div className="flex flex-col items-center justify-center gap-1 p-4">
