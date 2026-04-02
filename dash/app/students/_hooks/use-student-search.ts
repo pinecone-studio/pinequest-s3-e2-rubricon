@@ -7,12 +7,14 @@ export function useStudentSearch<
     course: string;
     className: string;
     major: string;
+    finalScore: number | null;
   }
 >(items: T[]) {
   const [searchQuery, setSearchQuery] = useState("");
   const [courseFilter, setCourseFilter] = useState<string[]>([]);
   const [classFilter, setClassFilter] = useState<string[]>([]);
   const [majorFilter, setMajorFilter] = useState<string[]>([]);
+  const [scoreFilter, setScoreFilter] = useState<string[]>([]);
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -32,9 +34,28 @@ export function useStudentSearch<
       const matchesMajor =
         majorFilter.length === 0 || majorFilter.includes(item.major);
 
-      return matchesName && matchesCourse && matchesClass && matchesMajor;
+      const scoreBand =
+        item.finalScore === null
+          ? null
+          : item.finalScore <= 60
+            ? "0-60"
+            : item.finalScore <= 80
+              ? "61-80"
+              : "81-100";
+
+      const matchesScore =
+        scoreFilter.length === 0 ||
+        (scoreBand !== null && scoreFilter.includes(scoreBand));
+
+      return (
+        matchesName &&
+        matchesCourse &&
+        matchesClass &&
+        matchesMajor &&
+        matchesScore
+      );
     });
-  }, [items, searchQuery, courseFilter, classFilter, majorFilter]);
+  }, [items, searchQuery, courseFilter, classFilter, majorFilter, scoreFilter]);
 
   return {
     searchQuery,
@@ -45,6 +66,8 @@ export function useStudentSearch<
     setClassFilter,
     majorFilter,
     setMajorFilter,
+    scoreFilter,
+    setScoreFilter,
     filteredItems,
   };
 }

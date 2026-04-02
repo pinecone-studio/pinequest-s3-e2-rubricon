@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
-import {
-  MoreHorizontal,
-  Mail,
-  Download,
-} from "lucide-react";
+import { MoreHorizontal, Mail, Download } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -21,12 +17,17 @@ import {
   DialogTitle,
   DialogHeader,
 } from "@/components/ui/dialog";
+import {
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 
 import { Student } from "../type";
 
 interface StudentTableProps {
   students: Student[];
 }
+
+type EmailTemplate = "reminder" | "score" | "violation";
 
 const getInitials = (name: string) =>
   name
@@ -52,13 +53,77 @@ const StudentTable = ({ students }: StudentTableProps) => {
     if (e.key === "Enter") handleView(student);
   };
 
+  const buildTemplate = (student: Student, template: EmailTemplate) => {
+    if (template === "score") {
+      return {
+        subject: `${student.name} - Дүнгийн мэдээлэл`,
+        body: `Сайн байна уу, ${student.name}.\n\nТаны дүн: ${student.finalScore ?? "-"}\nШалгалтын тоо: ${student.examsTaken}\n\nХүндэтгэсэн.`,
+      };
+    }
+
+    if (template === "violation") {
+      return {
+        subject: `${student.name} - Зөрчил анхааруулга`,
+        body: `Сайн байна уу, ${student.name}.\n\nТаны зөрчлийн тоо: ${student.violationCount}\nДэлгэрэнгүй мэдээллийг багшаасаа лавлана уу.\n\nХүндэтгэсэн.`,
+      };
+    }
+
+    return {
+      subject: `${student.name} - Санамж`,
+      body: `Сайн байна уу, ${student.name}.\n\nЭнэ бол танд зориулсан санамж мессеж юм.\n\nХүндэтгэсэн.`,
+    };
+  };
+
+  const sendEmail = (student: Student, template: EmailTemplate) => {
+    const message = buildTemplate(student, template);
+    const mailto = `mailto:${student.email}?subject=${encodeURIComponent(
+      message.subject
+    )}&body=${encodeURIComponent(message.body)}`;
+    window.open(mailto, "_self");
+  };
+
+  const downloadStudent = (student: Student) => {
+    const payload = {
+      id: student.id,
+      name: student.name,
+      email: student.email,
+      className: student.className,
+      course: student.course,
+      major: student.major,
+      examTitle: student.examTitle,
+      examsTaken: student.examsTaken,
+      violationCount: student.violationCount,
+      finalScore: student.finalScore,
+      lastActive: student.lastActive,
+      examHistory: student.examHistory,
+    };
+
+    const text = JSON.stringify(payload, null, 2);
+    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(
+      text
+    )}`;
+
+    const safeName = (student.name || "student")
+      .trim()
+      .replace(/\s+/g, "_")
+      .replace(/[^\w-]/g, "");
+    const filename = `${safeName || student.id}_info.json`;
+
+    const anchor = document.createElement("a");
+    anchor.setAttribute("href", dataUri);
+    anchor.setAttribute("download", filename);
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  };
+
   return (
-    <>
+    <TooltipProvider>
       <div className="rounded-2xl border bg-white overflow-hidden">
         <table className="w-full text-left">
           <thead>
             <tr className="border-b bg-white">
-              <th className="px-6 py-4 text-sm font-semibold">Оюутан</th>
+              <th className="px-6 py-4 text-sm font-semibold">Оюутанууд</th>
               <th className="px-6 py-4 text-sm font-semibold">Анги</th>
               <th className="px-6 py-4 text-sm font-semibold">Шалгалтын нэр</th>
               <th className="px-6 py-4 text-sm font-semibold">Курс</th>
@@ -102,14 +167,14 @@ const StudentTable = ({ students }: StudentTableProps) => {
                         {s.violationCount}
                       </span>
                     ) : (
-                      <span className="text-sm text-black-400">0</span>
+                      <span className="text-sm text-gray-400">0</span>
                     )}
                   </td>
                   <td className="px-6 py-4">
                     {s.finalScore === null ? (
-                      <span className="text-black-500">-</span>
+                      <span className="text-gray-500">-</span>
                     ) : (
-                      <span className="text-sm font-medium  text-blue-700">
+                      <span className="text-sm font-medium text-blue-700">
                         {s.finalScore}
                       </span>
                     )}
@@ -119,18 +184,51 @@ const StudentTable = ({ students }: StudentTableProps) => {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
+                          title="Үйлдлүүд"
                           onClick={(e) => e.stopPropagation()}
-                          className="p-2 hover:bg-gray-100 rounded"
+                          className="rounded p-2 transition-all duration-200 ease-out hover:bg-gray-100 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                         >
-                          <MoreHorizontal className="w-5 h-5" />
+                          <MoreHorizontal className="h-5 w-5" />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            sendEmail(s, "reminder");
+                          }}
+                          className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
+                        >
                           <Mail className="w-4 h-4 mr-2" />
-                          И-мэйл
+                          И-мэйл (Санамж)
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            sendEmail(s, "score");
+                          }}
+                          className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
+                        >
+                          <Mail className="w-4 h-4 mr-2" />
+                          И-мэйл (Дүнгийн мэдээлэл)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            sendEmail(s, "violation");
+                          }}
+                          className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
+                        >
+                          <Mail className="w-4 h-4 mr-2" />
+                          И-мэйл (Зөрчил анхааруулга)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            downloadStudent(s);
+                          }}
+                          className="transition-all duration-200 ease-out active:scale-[0.98] focus-visible:bg-blue-50"
+                        >
                           <Download className="w-4 h-4 mr-2" />
                           Татах
                         </DropdownMenuItem>
@@ -228,7 +326,7 @@ const StudentTable = ({ students }: StudentTableProps) => {
           )}
         </DialogContent>
       </Dialog>
-    </>
+    </TooltipProvider>
   );
 };
 
