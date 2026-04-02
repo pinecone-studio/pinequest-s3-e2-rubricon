@@ -4,6 +4,43 @@ import { useEffect, useMemo, useState } from "react";
 import { ExamCard } from "./_components/ExamCard";
 import type { ClassCourse } from "@/lib/grading/types";
 import { fetchGradingClasses } from "./mockData";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const GradingPageSkeleton = () => {
+  return (
+    <div>
+      <div className="mb-8 space-y-2">
+        <Skeleton className="h-8 w-52" />
+        <Skeleton className="h-4 w-80 max-w-full" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div
+            key={index}
+            className="rounded-2xl border border-gray-200 bg-white p-5"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-5 w-24" />
+            </div>
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="mt-2 h-4 w-40" />
+            <Skeleton className="my-4 h-px w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-2 w-full rounded-full" />
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const GradingPage = () => {
   const [classes, setClasses] = useState<ClassCourse[]>([]);
@@ -46,7 +83,7 @@ const GradingPage = () => {
       </div>
 
       {loading ? (
-        <div className="text-sm text-gray-500">Уншиж байна...</div>
+        <GradingPageSkeleton />
       ) : visibleClasses.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
           Оюутантай хичээл одоогоор алга байна.

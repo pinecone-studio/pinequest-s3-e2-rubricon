@@ -1,19 +1,21 @@
 "use client";
 
 import { EssayQuestion } from "@/lib/grading/types";
-import { AutomatedScore } from "./AutomatedScore";
-import { ManualRubric } from "./ManualRubric";
 import { FeedbackSection } from "./FeedbackSection";
+import { ManualRubric } from "./ManualRubric";
 import { ChevronLeft, ChevronRight, Send } from "lucide-react";
 
 type GradingSidebarProps = {
   mcScore: number;
   mcTotal: number;
+  manualScore: number;
+  manualTotal: number;
   currentEssay: EssayQuestion;
   onRubricChange: (criterionId: string, score: number) => void;
   onFeedbackChange: (val: string) => void;
   totalScore: number;
   maxTotalScore: number;
+  finalPercent: number;
   onSubmit: () => void;
   onPrevStudent: () => void;
   onNextStudent: () => void;
@@ -21,28 +23,60 @@ type GradingSidebarProps = {
 export const GradingSidebar = ({
   mcScore,
   mcTotal,
+  manualScore,
+  manualTotal,
   currentEssay,
   onRubricChange,
   onFeedbackChange,
   totalScore,
   maxTotalScore,
+  finalPercent,
   onSubmit,
   onPrevStudent,
   onNextStudent,
 }: GradingSidebarProps) => {
   return (
-    <aside className="w-80 border-l border-gray-200 bg-gray-50 flex flex-col overflow-y-auto">
+    <aside className="w-80 border-l border-gray-200 bg-[#f0f4f8] flex flex-col overflow-y-auto">
       <div className="flex-1 p-4 flex flex-col gap-4">
-        <AutomatedScore score={mcScore} total={mcTotal} />
-
-        <ManualRubric
-          rubric={currentEssay.rubric}
-          onScoreChange={onRubricChange}
-        />
+        <div className="border border-[#31A8E0]/25 rounded-2xl px-5 py-4 bg-[#31A8E0]/5 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-gray-700">
+              Эцсийн Дүнгийн Урьдчилсан Харагдац
+            </span>
+            <span className="text-sm font-bold text-[#31A8E0]">
+              {finalPercent}%
+            </span>
+          </div>
+          <div className="text-xs leading-5 text-gray-600">
+            <p>
+              Автомат:{" "}
+              <span className="font-semibold text-gray-800">
+                {mcScore}/{mcTotal}
+              </span>
+            </p>
+            <p>
+              Багшийн оноо:{" "}
+              <span className="font-semibold text-gray-800">
+                {manualScore}/{manualTotal}
+              </span>
+            </p>
+            <p>
+              Нийт:{" "}
+              <span className="font-semibold text-gray-800">
+                {totalScore}/{maxTotalScore}
+              </span>
+            </p>
+          </div>
+        </div>
 
         <FeedbackSection
           feedback={currentEssay.feedback}
           onFeedbackChange={onFeedbackChange}
+        />
+
+        <ManualRubric
+          rubric={currentEssay.rubric}
+          onScoreChange={onRubricChange}
         />
 
         <div className="border border-gray-200 rounded-2xl px-5 py-4 bg-white flex items-center justify-between">

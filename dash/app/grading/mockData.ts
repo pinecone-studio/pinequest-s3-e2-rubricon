@@ -40,6 +40,37 @@ function toRelative(iso?: string | null): string {
   const d = Math.floor(hr / 24);
   return `${d}ө өмнө`;
 }
+
+const EXAM_POINTS_QUERY = `
+query ExamPoints($examId: String!) {
+  examQuestions(exam_id: $examId) {
+    question_id
+    points
+  }
+}
+`;
+
+async function getExamTotalPoints(examId: string): Promise<number> {
+  const data = await gql<{
+    examQuestions: Array<{ question_id: string; points: number | null }> | null;
+  }>(EXAM_POINTS_QUERY, { examId });
+
+  const rows = data.examQuestions ?? [];
+  return rows.reduce((sum, row) => sum + (row.points ?? 0), 0);
+}
+
+async function getExamQuestionPoints(examId: string): Promise<Map<string, number>> {
+  const data = await gql<{
+    examQuestions: Array<{ question_id: string; points: number | null }> | null;
+  }>(EXAM_POINTS_QUERY, { examId });
+
+  const map = new Map<string, number>();
+  for (const row of data.examQuestions ?? []) {
+    map.set(String(row.question_id), row.points ?? 0);
+  }
+  return map;
+}
+
 function getClassStudentIds(
   classId: string,
   enrollments: Enrollment[],
@@ -56,13 +87,6 @@ function getClassStudentIds(
   return ids;
 }
 const DEFAULT_RUBRIC: RubricCriterion[] = [
-  {
-    id: "accuracy",
-    name: "Агуулгын Үнэн Зөв Байдал",
-    description: "Хариултын зөв ба гүнзгий байдал",
-    maxScore: 10,
-    score: 0,
-  },
   {
     id: "clarity",
     name: "Тодорхой ба Зохион Байгуулалт",
@@ -145,44 +169,46 @@ export async function fetchGradingClasses(): Promise<ClassCourse[]> {
     submissions: Submission[];
   }>(BOOT_QUERY);
 
-  return data.courses.map((c) => {
-    const examIds = new Set((c.exams ?? []).map((e) => e.id));
-    const courseSubs = data.submissions.filter((s) => examIds.has(s.exam_id));
+  return Promise.all(
+    data.courses.map(async (c) => {
+      const examIds = new Set((c.exams ?? []).map((e) => e.id));
+      const courseSubs = data.submissions.filter((s) => examIds.has(s.exam_id));
 
-    const classStudentIds = getClassStudentIds(
-      c.id,
-      data.enrollments,
-      courseSubs,
-    );
+      const classStudentIds = getClassStudentIds(
+        c.id,
+        data.enrollments,
+        courseSubs,
+      );
 
-    const latestByStudent = new Map<string, Submission>();
-    for (const s of courseSubs) {
-      const prev = latestByStudent.get(s.student_id);
-      const prevTs = new Date(
-        prev?.submitted_at ?? prev?.started_at ?? 0,
-      ).getTime();
-      const nextTs = new Date(s.submitted_at ?? s.started_at ?? 0).getTime();
-      if (!prev || nextTs >= prevTs) latestByStudent.set(s.student_id, s);
-    }
+      const latestByStudent = new Map<string, Submission>();
+      for (const s of courseSubs) {
+        const prev = latestByStudent.get(s.student_id);
+        const prevTs = new Date(
+          prev?.submitted_at ?? prev?.started_at ?? 0,
+        ).getTime();
+        const nextTs = new Date(s.submitted_at ?? s.started_at ?? 0).getTime();
+        if (!prev || nextTs >= prevTs) latestByStudent.set(s.student_id, s);
+      }
 
-    const latestSubs = Array.from(latestByStudent.values());
+      const latestSubs = Array.from(latestByStudent.values());
 
-    const graded = latestSubs.filter(
-      (s) => s.final_score !== null && s.final_score !== undefined,
-    ).length;
-    const total = classStudentIds.size;
-    const pending = Math.max(classStudentIds.size - graded, 0);
+      const graded = latestSubs.filter(
+        (s) => s.final_score !== null && s.final_score !== undefined,
+      ).length;
+      const total = classStudentIds.size;
+      const pending = Math.max(classStudentIds.size - graded, 0);
 
-    return {
-      id: c.id,
-      code: c.code,
-      name: c.name,
-      assignmentLabel: c.exams?.[0]?.title ?? "Шалгалт",
-      total,
-      pending,
-      graded,
-    };
-  });
+      return {
+        id: c.id,
+        code: c.code,
+        name: c.name,
+        assignmentLabel: c.exams?.[0]?.title ?? "Шалгалт",
+        total,
+        pending,
+        graded,
+      };
+    }),
+  );
 }
 
 export async function fetchClassStudents(classId: string): Promise<{
@@ -200,6 +226,13 @@ export async function fetchClassStudents(classId: string): Promise<{
   if (!course) return { course: null, students: [] };
 
   const examIds = new Set((course.exams ?? []).map((e) => e.id));
+  const examTotalEntries = await Promise.all(
+    Array.from(examIds).map(async (examId) => {
+      const total = await getExamTotalPoints(examId);
+      return [examId, total] as const;
+    }),
+  );
+  const examTotalById = new Map(examTotalEntries);
   const courseSubs = data.submissions.filter((s) => examIds.has(s.exam_id));
   const classStudentIds = getClassStudentIds(
     classId,
@@ -231,7 +264,7 @@ export async function fetchClassStudents(classId: string): Promise<{
         status: graded ? "Дүгнэгдсэн" : "Хүлээгдэж байна",
         mcScore: sub?.score_auto ?? 0,
         finalScore: sub?.final_score ?? null,
-        mcTotal: 100,
+        mcTotal: sub?.exam_id ? (examTotalById.get(sub.exam_id) ?? 0) : 0,
         essays: [],
       } satisfies Student;
     });
@@ -307,6 +340,14 @@ export async function fetchStudentGradingContext(
   const examIds = new Set((data.course.exams ?? []).map((e) => e.id));
 
   const classSubs = data.submissions.filter((s) => examIds.has(s.exam_id));
+  const classExamIds = Array.from(new Set(classSubs.map((s) => s.exam_id)));
+  const classExamTotalEntries = await Promise.all(
+    classExamIds.map(async (examId) => {
+      const total = await getExamTotalPoints(examId);
+      return [examId, total] as const;
+    }),
+  );
+  const classExamTotalById = new Map(classExamTotalEntries);
   const classStudentIds = getClassStudentIds(
     classId,
     data.enrollments,
@@ -347,7 +388,7 @@ export async function fetchStudentGradingContext(
           : "Хүлээгдэж байна",
       mcScore: sub?.score_auto ?? 0,
       finalScore: sub?.final_score ?? null,
-      mcTotal: 100,
+      mcTotal: sub?.exam_id ? (classExamTotalById.get(sub.exam_id) ?? 0) : 0,
       essays: [],
     } satisfies Student;
   });
@@ -359,6 +400,12 @@ export async function fetchStudentGradingContext(
       const bt = new Date(b.submitted_at ?? b.started_at ?? 0).getTime();
       return bt - at;
     })[0];
+  const latestMcTotal = latest?.exam_id
+    ? (classExamTotalById.get(latest.exam_id) ?? 0)
+    : 0;
+  const questionPointsById = latest?.exam_id
+    ? await getExamQuestionPoints(latest.exam_id)
+    : new Map<string, number>();
 
   const questions = (data.course.exams ?? [])
     .flatMap((e) => e.questions ?? [])
@@ -392,6 +439,7 @@ export async function fetchStudentGradingContext(
 
   const essays: EssayQuestion[] = fallbackManualQuestions.map((q, idx) => {
     const answer = answerMap.get(String(q.id));
+    const maxScoreForQuestion = questionPointsById.get(String(q.id)) ?? 5;
 
     return {
       id: idx + 1,
@@ -399,7 +447,10 @@ export async function fetchStudentGradingContext(
       submissionAnswerId: answer?.id ?? null,
       question: q.text,
       studentAnswer: answer?.text_answer ?? "",
-      rubric: DEFAULT_RUBRIC.map((r) => ({ ...r })),
+      rubric: DEFAULT_RUBRIC.map((r) => ({
+        ...r,
+        maxScore: Math.max(1, maxScoreForQuestion),
+      })),
       feedback: answer?.feedback ?? "",
     };
   });
@@ -416,7 +467,7 @@ export async function fetchStudentGradingContext(
         : "Хүлээгдэж байна",
     mcScore: latest?.score_auto ?? 0,
     finalScore: latest?.final_score ?? null,
-    mcTotal: 100,
+    mcTotal: latestMcTotal,
     essays,
   };
 

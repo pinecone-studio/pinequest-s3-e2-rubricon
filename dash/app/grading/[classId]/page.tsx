@@ -5,11 +5,55 @@ import { useParams } from "next/navigation";
 import { SubmissionsHeader } from "./_components/SubmissionsHeader";
 import { SubmissionsSearch } from "./_components/SubmissionsSearch";
 import { SubmissionsList } from "./_components/SubmissionsList";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import type { Student } from "@/lib/grading/types";
 import { fetchClassStudents } from "../mockData";
 
 type FilterTab = "Бүгд" | "Хүлээгдэж байна" | "Дүгнэгдсэн";
+
+const SubmissionsPageSkeleton = () => {
+  return (
+    <div className="min-h-screen bg-[#f0f4f8] flex flex-col">
+      <header className="flex items-center gap-4 border-b border-gray-200 bg-white px-6 py-4">
+        <Skeleton className="h-9 w-9 rounded-md" />
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-56" />
+          <Skeleton className="h-3 w-40" />
+          <Skeleton className="h-3 w-32" />
+        </div>
+      </header>
+
+      <div className="mx-auto w-full max-w-4xl flex-1 p-6">
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <Skeleton className="h-10 w-72 max-w-full" />
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-28" />
+            <Skeleton className="h-9 w-36" />
+            <Skeleton className="h-9 w-28" />
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {Array.from({ length: 7 }).map((_, index) => (
+            <div
+              key={index}
+              className="rounded-2xl border border-gray-200 bg-white px-5 py-4"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-56" />
+                </div>
+                <Skeleton className="h-6 w-24 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const SubmissionsPage = () => {
   const params = useParams();
@@ -63,12 +107,12 @@ const SubmissionsPage = () => {
     graded: allStudents.filter((s) => s.status === "Дүгнэгдсэн").length,
   };
 
-  if (loading) return <div className="p-8 text-gray-500">Уншиж байна...</div>;
+  if (loading) return <SubmissionsPageSkeleton />;
   if (!course)
     return <div className="p-8 text-gray-500">Хичээл олдсонгүй.</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#f0f4f8] flex flex-col">
       <SubmissionsHeader
         classCode={course.code}
         className={course.name}

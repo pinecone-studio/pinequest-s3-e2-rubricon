@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Monitor, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { graphqlRequest } from "@/lib/graphql";
 
@@ -219,9 +220,29 @@ export function ActiveExams() {
       </CardHeader>
       <CardContent className=" flex flex-1 flex-col gap-3">
         {isLoading ? (
-          <div className="text-[12px] text-[#8a9bb0] py-2">
-            Ачааллаж байна...
-          </div>
+          Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-3 rounded-xl border border-[#e8eef4] p-4"
+            >
+              <Skeleton className="h-[38px] w-[38px] rounded-[9px]" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+              <div className="flex gap-4">
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              </div>
+              <Skeleton className="h-8 w-28 rounded-lg" />
+            </div>
+          ))
         ) : activeExams.length === 0 ? (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-[#dce8f2] bg-[#f8fbff] px-4 py-3">
             <p className="text-[12px] text-[#8a9bb0]">

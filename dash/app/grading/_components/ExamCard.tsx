@@ -2,12 +2,6 @@ import { Separator } from "@/components/ui/separator";
 import { ClassCourse } from "@/lib/grading/types";
 import { CircleCheckBig, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 
 type ExamCardProps = {
@@ -28,21 +22,17 @@ export const ExamCard = ({ course }: ExamCardProps) => {
     >
       <div className="flex items-center justify-between gap-2">
         {course.assignmentLabel ? (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  variant="outline"
-                  className="inline-block max-w-[100px] truncate text-xs py-0.5"
-                >
-                  {course.assignmentLabel}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent sideOffset={8}>
-                {course.assignmentLabel}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="group relative inline-flex max-w-[100px]">
+            <Badge
+              variant="outline"
+              className="inline-block max-w-[100px] truncate text-xs py-0.5"
+            >
+              {course.assignmentLabel}
+            </Badge>
+            <div className="pointer-events-none absolute left-1/2 top-full z-30 mt-1 w-max max-w-[240px] -translate-x-1/2 rounded-md bg-gray-900 px-2 py-1 text-[11px] text-white opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100">
+              {course.assignmentLabel}
+            </div>
+          </div>
         ) : (
           <div className="h-6" />
         )}

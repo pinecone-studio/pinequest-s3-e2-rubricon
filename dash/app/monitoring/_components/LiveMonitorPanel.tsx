@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getSocket } from "@/lib/socket";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type ConnectionStateLabel =
   | "new"
@@ -50,7 +51,6 @@ type PeerLeftPayload = {
 };
 
 type LiveMonitorPanelProps = {
-  roomId?: string;
   roomIds?: string[];
 };
 
@@ -115,8 +115,8 @@ function StudentStreamTile({
             className="h-full w-full rounded-lg bg-black object-contain"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-xs text-white/50">
-            Student camera is waiting...
+          <div className="h-full w-full p-3">
+            <Skeleton className="h-full w-full rounded-md bg-white/10" />
           </div>
         )}
       </div>
@@ -129,7 +129,6 @@ function StudentStreamTile({
 }
 
 export function LiveMonitorPanel({
-  roomId = "exam-room-1",
   roomIds,
 }: LiveMonitorPanelProps) {
   const peersRef = useRef<Map<string, PeerConnectionEntry>>(new Map());
@@ -139,13 +138,14 @@ export function LiveMonitorPanel({
   const [status, setStatus] = useState("Waiting for students...");
   const [panelDebug, setPanelDebug] = useState("No signaling event yet");
   const normalizedRoomIds = useMemo(() => {
-    const raw = roomIds?.length ? roomIds : [roomId];
+    const raw = roomIds ?? [];
     return Array.from(new Set(raw.filter(Boolean)));
-  }, [roomId, roomIds]);
+  }, [roomIds]);
 
   useEffect(() => {
+    setTiles([]);
+
     if (normalizedRoomIds.length === 0) {
-      setTiles([]);
       setStatus("No live exam rooms");
       setPanelDebug("No room selected");
       return;
@@ -369,6 +369,7 @@ export function LiveMonitorPanel({
       peersRef.current.clear();
       peerRoomRef.current.clear();
       pendingIceRef.current.clear();
+      setTiles([]);
     };
   }, [normalizedRoomIds]);
 

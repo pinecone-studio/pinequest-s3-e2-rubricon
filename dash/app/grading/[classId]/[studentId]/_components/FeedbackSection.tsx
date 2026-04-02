@@ -19,7 +19,7 @@ export const FeedbackSection = ({
         onChange={(e) => onFeedbackChange(e.target.value)}
         placeholder="Хувийн санал хүсэлт оруулна уу..."
         rows={4}
-        className="w-full text-sm border border-gray-200 rounded-xl p-3 text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-[#31A8E0]/30 transition"
+        className="w-full text-sm border bg-gray-50 border-gray-200 rounded-xl p-3 text-gray-700 resize-none focus:outline-none focus:ring-2 focus:ring-[#31A8E0]/30 transition"
       />
     </div>
   );

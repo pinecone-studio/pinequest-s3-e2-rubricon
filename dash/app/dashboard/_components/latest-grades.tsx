@@ -8,6 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { graphqlRequest } from "@/lib/graphql";
 
@@ -161,9 +162,16 @@ export function LatestGrades() {
 
       <CardContent className="px-5 flex flex-col divide-y divide-[#e8eef4]">
         {loading ? (
-          <div className="py-3 text-[12px] text-[#8a9bb0]">
-            Ачааллаж байна...
-          </div>
+          Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="py-3 first:pt-0 last:pb-0">
+              <div className="mb-2 flex items-center gap-2">
+                <Skeleton className="h-3.5 w-3.5 rounded-full" />
+                <Skeleton className="h-4 w-44" />
+              </div>
+              <Skeleton className="h-3 w-56" />
+              <Skeleton className="mt-2 h-3 w-24" />
+            </div>
+          ))
         ) : grades.length === 0 ? (
           <div className="py-3 text-[12px] text-[#8a9bb0]">
             Харах үнэлгээ одоогоор алга байна

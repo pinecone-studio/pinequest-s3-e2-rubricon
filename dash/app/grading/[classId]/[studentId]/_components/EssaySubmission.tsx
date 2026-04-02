@@ -50,7 +50,7 @@ export const EssaySubmission = ({
         <button
           onClick={onPrev}
           disabled={essayIndex === 0}
-          className="flex items-center gap-1.5 text-sm text-gray-800 font-medium hover:bg-gray-100  disabled:opacity-30 disabled:cursor-not-allowed transition border border-gray-200 py-1 px-2 rounded-md shadow-xs"
+          className="flex items-center gap-1.5 text-sm text-gray-800 font-medium hover:bg-white  disabled:opacity-30 disabled:cursor-not-allowed transition border border-gray-200 py-1 px-2 rounded-md shadow-xs"
         >
           <ChevronLeft size={16} />
           Өмнөх Эссе
@@ -63,7 +63,7 @@ export const EssaySubmission = ({
         <button
           onClick={onNext}
           disabled={essayIndex === totalEssays - 1}
-          className="flex items-center gap-1.5 text-sm text-gray-800 font-medium hover:bg-gray-100  disabled:opacity-30 disabled:cursor-not-allowed transition border border-gray-200 py-1 px-2 rounded-md shadow-xs"
+          className="flex items-center gap-1.5 text-sm text-gray-800 font-medium hover:bg-white  disabled:opacity-30 disabled:cursor-not-allowed transition border border-gray-200 py-1 px-2 rounded-md shadow-xs"
         >
           Дараах Эссе
           <ChevronRight size={16} />

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { graphqlRequest } from "@/lib/graphql";
 
@@ -183,9 +184,22 @@ export function UpcomingExams() {
 
       <CardContent className="px-5 flex flex-1 flex-col divide-y divide-[#e8eef4]">
         {loading ? (
-          <div className="py-2.5 text-[12px] text-[#8a9bb0]">
-            Ачааллаж байна...
-          </div>
+          Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+            >
+              <div className="min-w-[44px] shrink-0 space-y-1">
+                <Skeleton className="h-3 w-7" />
+                <Skeleton className="h-4 w-10" />
+              </div>
+              <Skeleton className="h-2 w-2 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-44" />
+                <Skeleton className="h-3 w-56" />
+              </div>
+            </div>
+          ))
         ) : items.length === 0 ? (
           <div className="py-2.5 text-[12px] text-[#8a9bb0]">
             Удахгүй эхлэх шалгалт олдсонгүй

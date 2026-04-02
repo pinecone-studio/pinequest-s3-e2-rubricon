@@ -19,6 +19,81 @@ import { EssaySubmission } from "./_components/EssaySubmission";
 import { GradingHeader } from "./_components/GradingHeader";
 import { GradingSidebar } from "./_components/GradingSidebar";
 import { StudentInfoHeader } from "./_components/StudentInfoHeader";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const GradeStudentPageSkeleton = () => {
+  return (
+    <div className="flex h-full flex-1 flex-col overflow-hidden">
+      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-9 w-9 rounded-md" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-44" />
+            <Skeleton className="h-4 w-36" />
+          </div>
+        </div>
+        <Skeleton className="h-4 w-36" />
+      </header>
+
+      <div className="flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-48" />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-7 w-24 rounded-md" />
+        </div>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 p-6">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="mt-2 h-4 w-full" />
+              <Skeleton className="mt-2 h-4 w-5/6" />
+              <div className="mt-5 space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-28 w-full rounded-xl" />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between border-t border-gray-100 px-6 py-4">
+            <Skeleton className="h-9 w-28 rounded-md" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-9 w-28 rounded-md" />
+          </div>
+        </div>
+
+        <aside className="w-80 border-l border-gray-200 bg-[#f0f4f8] p-4">
+          <div className="space-y-4">
+            <div className="space-y-2 rounded-2xl border border-[#31A8E0]/25 bg-[#31A8E0]/5 px-5 py-4">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-3 w-2/3" />
+              <Skeleton className="h-3 w-2/3" />
+              <Skeleton className="h-3 w-2/3" />
+            </div>
+            <div className="space-y-2 rounded-2xl border border-gray-200 bg-white px-5 py-4">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+            <div className="space-y-2 rounded-2xl border border-gray-200 bg-white px-5 py-4">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <Skeleton className="h-12 w-full rounded-xl" />
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+};
 
 const GradeStudentPage = () => {
   const params = useParams();
@@ -149,18 +224,20 @@ const GradeStudentPage = () => {
       });
 
       if (hasEssay) {
-        const missingFeedback = reviewedEssays.some(
-          (e) => e.feedback.length === 0,
-        );
-        if (missingFeedback) {
-          toast.error("Эссе бүр дээр feedback бичээд илгээнэ үү.");
-          return;
-        }
-
         await saveEssayReviews(submissionId, reviewedEssays);
       }
 
-      const manualScore = reviewedEssays.reduce((sum, e) => sum + e.score, 0);
+      const rawManualScore = reviewedEssays.reduce(
+        (sum, e) => sum + e.score,
+        0,
+      );
+      const rawManualMax = student.essays.reduce(
+        (sum, essay) =>
+          sum +
+          essay.rubric.reduce((rubricSum, r) => rubricSum + r.maxScore, 0),
+        0,
+      );
+      const manualScore = Math.min(rawManualScore, rawManualMax);
       const finalScore = student.mcScore + manualScore;
 
       await publishSubmissionGrade(submissionId, finalScore, manualScore);
@@ -205,7 +282,7 @@ const GradeStudentPage = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-gray-500">Уншиж байна...</div>;
+  if (loading) return <GradeStudentPageSkeleton />;
   if (!student || !course) {
     return <div className="p-8 text-gray-500">Оюутан олдсонгүй.</div>;
   }
@@ -223,8 +300,14 @@ const GradeStudentPage = () => {
     (sum, e) => sum + e.rubric.reduce((s2, r) => s2 + r.maxScore, 0),
     0,
   );
-  const totalScore = student.mcScore + totalRubricScore;
-  const maxTotalScore = student.mcTotal + maxRubricScore;
+  const autoScore = student.mcScore;
+  const autoTotal = student.mcTotal;
+  const manualScore = Math.min(totalRubricScore, maxRubricScore);
+  const manualTotal = maxRubricScore;
+  const totalScore = autoScore + manualScore;
+  const maxTotalScore = autoTotal + manualTotal;
+  const finalPercent =
+    maxTotalScore > 0 ? Math.round((totalScore / maxTotalScore) * 100) : 0;
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden">
@@ -265,13 +348,16 @@ const GradeStudentPage = () => {
 
             {currentEssay && (
               <GradingSidebar
-                mcScore={student.mcScore}
-                mcTotal={student.mcTotal}
+                mcScore={autoScore}
+                mcTotal={autoTotal}
+                manualScore={manualScore}
+                manualTotal={manualTotal}
                 currentEssay={currentEssay}
                 onRubricChange={handleRubricChange}
                 onFeedbackChange={handleFeedbackChange}
                 totalScore={totalScore}
                 maxTotalScore={maxTotalScore}
+                finalPercent={finalPercent}
                 onSubmit={handleSubmit}
                 onPrevStudent={() => navigateStudent("prev")}
                 onNextStudent={() => navigateStudent("next")}

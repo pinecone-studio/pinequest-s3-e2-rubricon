@@ -47,6 +47,8 @@ const MONITORING_QUERY = `#graphql
       id
       title
       course_id
+      start_time
+      end_time
       questions {
         id
       }
@@ -94,6 +96,8 @@ type MonitoringQueryData = {
     id: string;
     title: string | null;
     course_id: string | null;
+    start_time: string | null;
+    end_time: string | null;
     questions: Array<{ id: string }> | null;
   }> | null;
   submissions: Array<{
@@ -123,6 +127,16 @@ const getTimestamp = (value: string | null | undefined) => {
   const ts = new Date(value).getTime();
   return Number.isFinite(ts) ? ts : 0;
 };
+
+function isExamActiveNow(exam: {
+  start_time: string | null;
+  end_time: string | null;
+}, nowMs: number) {
+  const start = getTimestamp(exam.start_time);
+  const end = getTimestamp(exam.end_time);
+  if (!start || !end) return false;
+  return nowMs >= start && nowMs <= end;
+}
 
 function toStudentAlertType(
   type: string | null | undefined,
@@ -182,15 +196,40 @@ export default function MonitoringPage() {
         const allSubmissions = monitoringData.submissions ?? [];
         const allCheatLogs = monitoringData.cheatLogs ?? [];
 
-        const inProgressSubmissions = allSubmissions.filter(
+        const nowMs = Date.now();
+        const scopedExamIds = routeExamId
+          ? new Set([routeExamId])
+          : new Set(
+              exams
+                .filter((exam) => isExamActiveNow(exam, nowMs))
+                .map((exam) => exam.id),
+            );
+
+        const scopedSubmissions = allSubmissions.filter(
+          (submission) => scopedExamIds.has(submission.exam_id),
+        );
+        const inProgressSubmissions = scopedSubmissions.filter(
           (submission) => submission.status === "in_progress",
         );
-        const submissions = routeExamId
-          ? inProgressSubmissions.filter(
-              (submission) => submission.exam_id === routeExamId,
-            )
-          : inProgressSubmissions;
-        const liveStudentIds = new Set(submissions.map((s) => s.student_id));
+        const submissions = scopedSubmissions;
+
+        const examById = new Map(exams.map((exam) => [exam.id, exam]));
+        const scopedCourseIds = new Set(
+          Array.from(scopedExamIds)
+            .map((examId) => examById.get(examId)?.course_id ?? null)
+            .filter((courseId): courseId is string => Boolean(courseId)),
+        );
+
+        const liveStudentIds = new Set<string>();
+        for (const enrollment of enrollments) {
+          if (scopedCourseIds.has(enrollment.course_id)) {
+            liveStudentIds.add(enrollment.student_id);
+          }
+        }
+        for (const submission of inProgressSubmissions) {
+          liveStudentIds.add(submission.student_id);
+        }
+
         const cheatLogs = (routeExamId
           ? allCheatLogs.filter((log) => log.exam_id === routeExamId)
           : allCheatLogs
@@ -199,7 +238,6 @@ export default function MonitoringPage() {
         const courseById = new Map(
           courses.map((course) => [course.id, course]),
         );
-        const examById = new Map(exams.map((exam) => [exam.id, exam]));
 
         const enrollmentsByStudentId = new Map<string, string[]>();
         for (const enrollment of enrollments) {
@@ -279,7 +317,13 @@ export default function MonitoringPage() {
               ? latestExam.questions.length
               : Math.max(answeredCount, 1);
 
-          const status = latestSubmission?.status === "in_progress" ? "online" : "offline";
+          const status =
+            latestSubmission?.status === "submitted" ||
+            latestSubmission?.status === "reviewed"
+              ? "submitted"
+              : latestSubmission?.status === "in_progress"
+                ? "online"
+                : "offline";
           const normalizedStudentId = String(
             Number.parseInt(student.id, 10) || index + 1,
           );
@@ -305,14 +349,7 @@ export default function MonitoringPage() {
           setStudents(nextStudents);
           setRoomByStudentId(nextRoomByStudentId);
           setActiveRoomIds(
-            Array.from(
-              new Set(
-                submissions
-                  .map((submission) => submission.exam_id)
-                  .filter((examId): examId is string => Boolean(examId))
-                  .map((examId) => `exam-room-${examId}`),
-              ),
-            ),
+            Array.from(scopedExamIds).map((examId) => `exam-room-${examId}`),
           );
           setIsLoading(false);
         }
@@ -407,6 +444,13 @@ export default function MonitoringPage() {
     );
   }, [classFilter, classFilteredStudents, roomByStudentId, students]);
 
+  const panelRoomIds = useMemo(() => {
+    if (routeExamId) {
+      return [`exam-room-${routeExamId}`];
+    }
+    return classFilter === "all" ? activeRoomIds : classFilteredRoomIds;
+  }, [activeRoomIds, classFilter, classFilteredRoomIds, routeExamId]);
+
   if (isLoading) {
     return <MonitoringPageSkeleton />;
   }
@@ -424,9 +468,7 @@ export default function MonitoringPage() {
             Monitoring data ачаалж чадсангүй: {loadError}
           </div>
         ) : null}
-        <LiveMonitorPanel
-          roomIds={classFilter === "all" ? activeRoomIds : classFilteredRoomIds}
-        />
+        <LiveMonitorPanel roomIds={panelRoomIds} />
         <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4 p-0">
           <StatCard
             title="Нийт сурагч"
