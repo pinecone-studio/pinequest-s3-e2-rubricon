@@ -8,6 +8,18 @@ type ManualRubricProps = {
 };
 
 export const ManualRubric = ({ rubric, onScoreChange }: ManualRubricProps) => {
+  const clampScore = (value: number, maxScore: number) =>
+    Math.min(maxScore, Math.max(0, Math.round(value)));
+
+  const getQuickScores = (maxScore: number) => {
+    const mid = Math.round(maxScore / 2);
+    return [...new Set([0, mid, maxScore])];
+  };
+
+  const applyScore = (criterionId: string, next: number, maxScore: number) => {
+    onScoreChange(criterionId, clampScore(next, maxScore));
+  };
+
   const totalEarned = rubric.reduce((sum, c) => sum + c.score, 0);
   const totalMax = rubric.reduce((sum, c) => sum + c.maxScore, 0);
   return (
@@ -22,38 +34,72 @@ export const ManualRubric = ({ rubric, onScoreChange }: ManualRubricProps) => {
       <div className="flex flex-col gap-5">
         {rubric.map((criterion) => (
           <div key={criterion.id}>
-            <div className="flex items-center justify-between mb-1">
-              <div>
-                <p className="text-sm font-semibold text-gray-700">
-                  {criterion.name}
-                </p>
-                <p className="text-xs text-gray-400">{criterion.description}</p>
-              </div>
-              <span className="text-sm font-bold text-gray-800 ml-3 whitespace-nowrap">
-                {criterion.score}/{criterion.maxScore}
+            <div className="flex items-center gap-2 ">
+              <button
+                type="button"
+                onClick={() =>
+                  applyScore(
+                    criterion.id,
+                    criterion.score - 1,
+                    criterion.maxScore,
+                  )
+                }
+                className="h-8 w-8 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                aria-label={`${criterion.name} оноог 1-ээр бууруулах`}
+              >
+                -
+              </button>
+              <input
+                type="number"
+                min={0}
+                max={criterion.maxScore}
+                step={1}
+                value={criterion.score}
+                onChange={(e) => {
+                  if (e.target.value === "") return;
+                  applyScore(
+                    criterion.id,
+                    Number(e.target.value),
+                    criterion.maxScore,
+                  );
+                }}
+                onBlur={(e) => {
+                  if (e.target.value === "") {
+                    applyScore(criterion.id, 0, criterion.maxScore);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                    e.preventDefault();
+                    const step = e.shiftKey ? 5 : 1;
+                    const delta = e.key === "ArrowUp" ? step : -step;
+                    applyScore(
+                      criterion.id,
+                      criterion.score + delta,
+                      criterion.maxScore,
+                    );
+                  }
+                }}
+                className="h-8 w-16 rounded-md border border-gray-300 px-2 text-center text-sm font-semibold text-gray-800 [appearance:textfield]"
+                aria-label={`${criterion.name} оноо`}
+              />
+              <span className="text-xs text-gray-400">
+                / {criterion.maxScore}
               </span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={criterion.maxScore}
-              step={1}
-              value={criterion.score}
-              onChange={(e) =>
-                onScoreChange(criterion.id, Number(e.target.value))
-              }
-              className="w-full h-1.5 rounded-full border-none outline-0 cursor-pointer"
-            />
-            {/* <Slider               min={0}
-              max={criterion.maxScore}
-              step={1}
-              value={criterion.score}
-              onChange={(e) =>
-                onScoreChange(criterion.id, Number(e.target.value))
-              }/> */}
-            <div className="flex justify-between text-xs text-gray-300 mt-0.5">
-              <span>0</span>
-              <span>{criterion.maxScore}</span>
+              <button
+                type="button"
+                onClick={() =>
+                  applyScore(
+                    criterion.id,
+                    criterion.score + 1,
+                    criterion.maxScore,
+                  )
+                }
+                className="h-8 w-8 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
+                aria-label={`${criterion.name} оноог 1-ээр нэмэх`}
+              >
+                +
+              </button>
             </div>
           </div>
         ))}

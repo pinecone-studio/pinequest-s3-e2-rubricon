@@ -19,9 +19,9 @@ export const EssaySubmission = ({
   onNext,
 }: EssaySubmissionProps) => {
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white">
       <div className="flex-1 p-6 overflow-y-auto">
-        <div className="bg-white border border-gray-200 rounded-2xl p-5">
+        <div className="border border-gray-200 rounded-2xl p-5">
           <h3 className="text-sm font-semibold text-gray-800 mb-1">
             {essay.id}-р Асуулт
           </h3>

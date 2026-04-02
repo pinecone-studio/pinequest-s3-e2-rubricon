@@ -69,7 +69,7 @@ const GradeStudentPageSkeleton = () => {
           </div>
         </div>
 
-        <aside className="w-80 border-l border-gray-200 bg-[#f0f4f8] p-4">
+        <aside className="w-80 border-l border-gray-200 bg-white p-4">
           <div className="space-y-4">
             <div className="space-y-2 rounded-2xl border border-[#31A8E0]/25 bg-[#31A8E0]/5 px-5 py-4">
               <Skeleton className="h-4 w-full" />

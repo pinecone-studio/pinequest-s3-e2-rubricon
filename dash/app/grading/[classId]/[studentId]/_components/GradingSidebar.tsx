@@ -36,10 +36,10 @@ export const GradingSidebar = ({
   onNextStudent,
 }: GradingSidebarProps) => {
   return (
-    <aside className="w-80 border-l border-gray-200 bg-[#f0f4f8] flex flex-col overflow-y-auto">
+    <aside className="w-80 border-l border-gray-200 bg-white flex flex-col overflow-y-auto">
       <div className="flex-1 p-4 flex flex-col gap-4">
-        <div className="border border-[#31A8E0]/25 rounded-2xl px-5 py-4 bg-[#31A8E0]/5 space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="border border-[#31A8E0]/25 rounded-2xl px-4 py-4 bg-[#31A8E0]/5 space-y-3">
+          <div className="flex flex-col gap-1 items-start justify-between">
             <span className="text-sm font-semibold text-gray-700">
               Эцсийн Дүнгийн Урьдчилсан Харагдац
             </span>
@@ -68,15 +68,14 @@ export const GradingSidebar = ({
             </p>
           </div>
         </div>
+        <ManualRubric
+          rubric={currentEssay.rubric}
+          onScoreChange={onRubricChange}
+        />
 
         <FeedbackSection
           feedback={currentEssay.feedback}
           onFeedbackChange={onFeedbackChange}
-        />
-
-        <ManualRubric
-          rubric={currentEssay.rubric}
-          onScoreChange={onRubricChange}
         />
 
         <div className="border border-gray-200 rounded-2xl px-5 py-4 bg-white flex items-center justify-between">
