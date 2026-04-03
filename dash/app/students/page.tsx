@@ -27,43 +27,45 @@ const normalizeStudents = (students: Student[]): Student[] => {
     return "stable";
   };
 
-  return students.map((s) => ({
-    ...s,
-    course: s.course ?? "-",
-    className: s.className ?? "-",
-    major: s.major ?? "-",
-    trend: normalizeTrend(s.trend),
-    lastActive: s.lastActive ?? "-",
-    examHistory: s.examHistory ?? [],
-  }));
-};
+  return students
+    .map((s) => ({
+      ...s,
+      course: s.course ?? "-",
+      className: s.className ?? "-",
+      major: s.major ?? "-",
+      trend: normalizeTrend(s.trend),
+      lastActive: s.lastActive ?? "-",
+      examHistory: s.examHistory ?? [],
+    }))
+    .sort((a, b) => {
+      // ПРИОРИТЕТ 1: Дүн гарсан оюутнууд (finalScore !== null)
+      const hasScoreA = a.finalScore !== null;
+      const hasScoreB = b.finalScore !== null;
 
-const isStudentComplete = (student: Student) => {
-  const requiredTextFields = [
-    student.className,
-    student.course,
-    student.examTitle,
-  ];
+      if (hasScoreA && !hasScoreB) return -1;
+      if (!hasScoreA && hasScoreB) return 1;
 
-  const hasAllText = requiredTextFields.every(
-    (value) =>
-      typeof value === "string" && value.trim() !== "" && value.trim() !== "-",
-  );
+      // ПРИОРИТЕТ 2: Оноогоор нь буурахаар (хэрэв хоёулаа дүнтэй бол)
+      if (hasScoreA && hasScoreB) {
+        if (a.finalScore !== b.finalScore) {
+          return (b.finalScore ?? 0) - (a.finalScore ?? 0);
+        }
+      }
 
-  const hasExamCount =
-    typeof student.examsTaken === "number" &&
-    Number.isFinite(student.examsTaken);
-  const hasViolationCount =
-    typeof student.violationCount === "number" &&
-    Number.isFinite(student.violationCount);
+      // ПРИОРИТЕТ 3: Шалгалт өгсөн тоогоор буурахаар
+      if (a.examsTaken !== b.examsTaken) {
+        return b.examsTaken - a.examsTaken;
+      }
 
-  return hasAllText && hasExamCount && hasViolationCount;
+      // ПРИОРИТЕТ 4: Нэрээр нь ( fallback )
+      return a.name.localeCompare(b.name);
+    });
 };
 
 export default function Page() {
   const { students, loading, error } = useStudents();
   const normalizedStudents = normalizeStudents(students);
-  const completeStudents = normalizedStudents.filter(isStudentComplete);
+  const completeStudents = normalizedStudents; // Show all students
 
   const {
     searchQuery,
@@ -144,89 +146,89 @@ export default function Page() {
         {hasAnyFilter && (
           <div className="flex flex-wrap gap-2 items-center">
             <AnimatePresence initial={false}>
-            {courseFilter.map((c) => (
-              <motion.div
-                key={c}
-                initial={{ opacity: 0, scale: 0.92, y: -4 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.92, y: -4 }}
-                transition={{ duration: 0.18 }}
-                className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
-              >
-                <span>{c}</span>
-                <button
-                  className="text-slate-500 transition-all duration-200 ease-out hover:text-slate-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
-                  onClick={() =>
-                    setCourseFilter((prev) => prev.filter((x) => x !== c))
-                  }
+              {courseFilter.map((c) => (
+                <motion.div
+                  key={c}
+                  initial={{ opacity: 0, scale: 0.92, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
                 >
-                  <X className="h-3 w-3" />
-                </button>
-              </motion.div>
-            ))}
+                  <span>{c}</span>
+                  <button
+                    className="text-slate-500 transition-all duration-200 ease-out hover:text-slate-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                    onClick={() =>
+                      setCourseFilter((prev) => prev.filter((x) => x !== c))
+                    }
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </motion.div>
+              ))}
 
-            {classFilter.map((c) => (
-              <motion.div
-                key={c}
-                initial={{ opacity: 0, scale: 0.92, y: -4 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.92, y: -4 }}
-                transition={{ duration: 0.18 }}
-                className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
-              >
-                <span>{c}</span>
-                <button
-                  className="text-slate-500 transition-all duration-200 ease-out hover:text-slate-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
-                  onClick={() =>
-                    setClassFilter((prev) => prev.filter((x) => x !== c))
-                  }
+              {classFilter.map((c) => (
+                <motion.div
+                  key={c}
+                  initial={{ opacity: 0, scale: 0.92, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
                 >
-                  <X className="h-3 w-3" />
-                </button>
-              </motion.div>
-            ))}
+                  <span>{c}</span>
+                  <button
+                    className="text-slate-500 transition-all duration-200 ease-out hover:text-slate-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                    onClick={() =>
+                      setClassFilter((prev) => prev.filter((x) => x !== c))
+                    }
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </motion.div>
+              ))}
 
-            {majorFilter.map((m) => (
-              <motion.div
-                key={m}
-                initial={{ opacity: 0, scale: 0.92, y: -4 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.92, y: -4 }}
-                transition={{ duration: 0.18 }}
-                className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
-              >
-                <span>{m}</span>
-                <button
-                  className="text-slate-500 transition-all duration-200 ease-out hover:text-slate-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
-                  onClick={() =>
-                    setMajorFilter((prev) => prev.filter((x) => x !== m))
-                  }
+              {majorFilter.map((m) => (
+                <motion.div
+                  key={m}
+                  initial={{ opacity: 0, scale: 0.92, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
                 >
-                  <X className="h-3 w-3" />
-                </button>
-              </motion.div>
-            ))}
+                  <span>{m}</span>
+                  <button
+                    className="text-slate-500 transition-all duration-200 ease-out hover:text-slate-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                    onClick={() =>
+                      setMajorFilter((prev) => prev.filter((x) => x !== m))
+                    }
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </motion.div>
+              ))}
 
-            {scoreFilter.map((s) => (
-              <motion.div
-                key={s}
-                initial={{ opacity: 0, scale: 0.92, y: -4 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.92, y: -4 }}
-                transition={{ duration: 0.18 }}
-                className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
-              >
-                <span>Оноо: {s}</span>
-                <button
-                  className="text-slate-500 transition-all duration-200 ease-out hover:text-slate-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
-                  onClick={() =>
-                    setScoreFilter((prev) => prev.filter((x) => x !== s))
-                  }
+              {scoreFilter.map((s) => (
+                <motion.div
+                  key={s}
+                  initial={{ opacity: 0, scale: 0.92, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.92, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-3 py-1 text-sm text-slate-800"
                 >
-                  <X className="h-3 w-3" />
-                </button>
-              </motion.div>
-            ))}
+                  <span>Оноо: {s}</span>
+                  <button
+                    className="text-slate-500 transition-all duration-200 ease-out hover:text-slate-900 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1"
+                    onClick={() =>
+                      setScoreFilter((prev) => prev.filter((x) => x !== s))
+                    }
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </motion.div>
+              ))}
             </AnimatePresence>
 
             <Tooltip>
@@ -260,7 +262,11 @@ export default function Page() {
             <motion.div
               className="mb-2 h-2 w-2 rounded-full bg-blue-500"
               animate={{ opacity: [0.35, 1, 0.35], scale: [1, 1.15, 1] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              transition={{
+                duration: 1.8,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
             />
             <p className="text-sm font-semibold text-slate-900">
               Илэрц олдсонгүй

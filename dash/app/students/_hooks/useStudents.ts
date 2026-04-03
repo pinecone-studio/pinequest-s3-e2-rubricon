@@ -34,6 +34,7 @@ type Exam = {
 type Submission = {
   id: string;
   student_id: string;
+  exam_id: string | null;
   final_score: number | null;
   submitted_at: string | null;
   started_at: string | null;
@@ -92,6 +93,7 @@ function mapToStudents(data: StudentsRealResponse): Student[] {
   const cheatLogs = data.cheatLogs ?? [];
 
   const courseById = new Map(courses.map((course) => [course.id, course]));
+  const examById = new Map(exams.map((exam) => [exam.id, exam]));
 
   const enrollmentsByStudentId = new Map<string, string[]>();
   for (const enrollment of enrollments) {
@@ -112,7 +114,7 @@ function mapToStudents(data: StudentsRealResponse): Student[] {
   }
 
   const submissionsByStudentId = new Map<string, Submission[]>();
-  for (const submission of submissions) {
+  for (const submission of (submissions as any)) {
     const next = submissionsByStudentId.get(submission.student_id) ?? [];
     next.push(submission);
     submissionsByStudentId.set(submission.student_id, next);
@@ -122,17 +124,33 @@ function mapToStudents(data: StudentsRealResponse): Student[] {
     const courseIds = enrollmentsByStudentId.get(student.id) ?? [];
     const classCode = courseById.get(courseIds[0] ?? "")?.code ?? "-";
 
+    const studentSubmissions = submissionsByStudentId.get(student.id) ?? [];
     const examsForStudent = exams.filter(
       (exam) => exam.course_id && courseIds.includes(exam.course_id)
     );
-    const latestSubmission =
-      submissionsByStudentId
-        .get(student.id)
-        ?.sort((a, b) => {
-          const aTime = new Date(a.submitted_at ?? a.started_at ?? 0).getTime();
-          const bTime = new Date(b.submitted_at ?? b.started_at ?? 0).getTime();
-          return bTime - aTime;
-        })[0] ?? null;
+
+    const sortedSubmissions = [...studentSubmissions].sort((a, b) => {
+      const aTime = new Date(a.submitted_at ?? a.started_at ?? 0).getTime();
+      const bTime = new Date(b.submitted_at ?? b.started_at ?? 0).getTime();
+      return bTime - aTime;
+    });
+
+    const latestSubmission = sortedSubmissions[0] ?? null;
+
+    const examHistory = sortedSubmissions.map((s) => {
+      const score = s.final_score ?? 0;
+      return {
+        id: s.id,
+        name: examById.get(s.exam_id ?? "")?.title ?? "Unknown Exam",
+        date: s.submitted_at || s.started_at || "-",
+        score: score <= 1 ? score * 100 : score, // Scale to 100 if it's 0-1
+        maxScore: 100,
+        grade: "-",
+      };
+    });
+
+    const lScore = latestSubmission?.final_score ?? null;
+    const scaledFinalScore = (lScore !== null) ? (lScore <= 1 ? lScore * 100 : lScore) : null;
 
     return {
       id: student.id,
@@ -143,10 +161,13 @@ function mapToStudents(data: StudentsRealResponse): Student[] {
       course: toCourseLabelFromCode(classCode),
       major: student.major ?? "-",
       violationCount: violationByStudentId.get(student.id) ?? 0,
-      examTitle: examsForStudent[0]?.title ?? "-",
-      finalScore: latestSubmission?.final_score ?? null,
-      examsTaken: examsForStudent.length,
-      lastActive: student.created_at ?? "-",
+      examTitle: latestSubmission 
+          ? (examById.get(latestSubmission.exam_id ?? "")?.title ?? "Unknown Exam")
+          : (examsForStudent[0]?.title ?? "-"),
+      finalScore: scaledFinalScore,
+      examsTaken: studentSubmissions.length,
+      lastActive: latestSubmission?.submitted_at ?? student.created_at ?? "-",
+      examHistory,
     };
   });
 }
