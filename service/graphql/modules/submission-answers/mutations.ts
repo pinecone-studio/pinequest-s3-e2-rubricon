@@ -159,12 +159,9 @@ export const submissionAnswerMutations = {
     _: unknown,
     args: CreateSubmissionAnswerArgs,
   ) => {
-    const isGradingPayload =
-      args.score !== undefined ||
-      args.feedback !== undefined ||
-      args.is_correct !== undefined;
+    const isTeacherGradingPayload = args.feedback !== undefined;
 
-    if (isGradingPayload) {
+    if (isTeacherGradingPayload) {
       await assertSubmissionGradeEditable(args.submission_id);
     } else {
       await assertSubmissionAnswerEditable(args.submission_id);
@@ -215,12 +212,9 @@ export const submissionAnswerMutations = {
 
     const resolvedSubmissionId = submissionId;
 
-    const isGradingPayload =
-      args.score !== undefined ||
-      args.feedback !== undefined ||
-      args.is_correct !== undefined;
+    const isTeacherGradingPayload = args.feedback !== undefined;
 
-    if (isGradingPayload) {
+    if (isTeacherGradingPayload) {
       await assertSubmissionGradeEditable(resolvedSubmissionId);
     } else {
       await assertSubmissionAnswerEditable(resolvedSubmissionId);
