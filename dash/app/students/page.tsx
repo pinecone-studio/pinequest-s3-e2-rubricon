@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SlidersHorizontal, X } from "lucide-react";
+import { Funnel, SlidersHorizontal, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { useStudents } from "./_hooks/useStudents";
@@ -125,10 +125,10 @@ export default function Page() {
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setOpen(true)}
-                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/20 bg-[linear-gradient(to_bottom,rgba(36,72,95,0.9)_0%,rgba(41,97,129,0.86)_48%,rgba(49,168,224,0.82)_100%)] px-4 text-white transition-all duration-200 ease-out hover:opacity-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                  className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#31A8E0] hover:bg-[#1fa8bb] px-4 text-white transition-all duration-200 ease-out hover:opacity-95 active:scale-[0.98] "
                 >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  Филтэр
+                  <Funnel className="h-4 w-4" />
+
                   {activeFilterCount > 0 && (
                     <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1.5 text-xs font-semibold">
                       {activeFilterCount}
