@@ -174,12 +174,15 @@ export function AddQuestionManually({
           <Button
             type="button"
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700 text-white min-w-[90px]"
+            className="bg-blue-600 hover:bg-blue-700 text-white min-w-22.5"
             disabled={saving || uploading}
             onClick={() => void handleSave()}
           >
             {saving ? (
-              <><Loader2 className="size-4 animate-spin mr-1.5 inline" />Хадгалж байна…</>
+              <>
+                <Loader2 className="size-4 animate-spin mr-1.5 inline" />
+                Хадгалж байна…
+              </>
             ) : mode === "edit" ? (
               "Хадгалах"
             ) : (

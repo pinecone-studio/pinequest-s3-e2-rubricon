@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Monitor, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { graphqlRequest } from "@/lib/graphql";
 
@@ -211,20 +212,50 @@ export function ActiveExams() {
             </p>
           </div>
           <Link href="/monitoring">
-            <button className="text-[12px] text-[#31A8E0] font-semibold hover:underline">
-              Бүгдийг харах →
+            <button className="text-[12px] text-[#31A8E0] font-semibold hover:text-[#317be0]">
+              Бүгдийг харах
             </button>
           </Link>
         </div>
       </CardHeader>
-      <CardContent className="px-5 pb-5 pt-4 flex flex-1 flex-col gap-3">
+      <CardContent className=" flex flex-1 flex-col gap-3">
         {isLoading ? (
-          <div className="text-[12px] text-[#8a9bb0] py-2">
-            Ачааллаж байна...
-          </div>
+          Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-3 rounded-xl border border-[#e8eef4] p-4"
+            >
+              <Skeleton className="h-[38px] w-[38px] rounded-[9px]" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+              <div className="flex gap-4">
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              </div>
+              <Skeleton className="h-8 w-28 rounded-lg" />
+            </div>
+          ))
         ) : activeExams.length === 0 ? (
-          <div className="text-[12px] text-[#8a9bb0] py-2">
-            Одоогоор идэвхтэй шалгалт алга байна
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-[#dce8f2] bg-[#f8fbff] px-4 py-3">
+            <p className="text-[12px] text-[#8a9bb0]">
+              Одоогоор идэвхтэй шалгалт алга байна
+            </p>
+            <Link href="/exams">
+              <Button
+                size="sm"
+                className="bg-[#31A8E0] hover:bg-[#2398cc] text-white text-[12px] font-semibold rounded-lg h-8 px-3 border-0"
+              >
+                Шалгалт нэмэх
+              </Button>
+            </Link>
           </div>
         ) : (
           activeExams.map((e, idx) => {
@@ -232,21 +263,21 @@ export function ActiveExams() {
             const Icon = hasViolations ? Monitor : Info;
             const iconBg = hasViolations
               ? "bg-[#31A8E0]/10"
-              : "bg-[#31A8E0]/10";
+              : "bg-[#2398cc]/10";
             const iconColor = hasViolations
               ? "text-[#31A8E0]"
-              : "text-[#31A8E0]";
+              : "text-[#2398cc]";
             const violationsColor = hasViolations
               ? "text-red-500"
-              : "text-[#31A8E0]";
+              : "text-[#C27A17]";
             const btnBg = hasViolations
               ? "bg-[#31A8E0] hover:bg-[#1fa8bb]"
-              : "bg-[#31A8E0] hover:bg-[#31A8E0]/90";
+              : "bg-[#31A8E0] hover:bg-[#2398cc]";
 
             return (
               <div
                 key={e.id ?? idx}
-                className="flex items-center gap-3 border border-[#e8eef4] rounded-xl px-4 py-3"
+                className="flex items-center gap-3 border border-[#e8eef4] rounded-xl p-4"
               >
                 <div
                   className={`w-[38px] h-[38px] rounded-[9px] ${iconBg} ${iconColor} flex items-center justify-center shrink-0`}
@@ -275,12 +306,12 @@ export function ActiveExams() {
                     <p className="text-[10px] text-[#8a9bb0]">Зөрчил</p>
                   </div>
                 </div>
-                <Link href="/monitoring">
+                <Link href={`/monitoring/${e.id}`}>
                   <Button
                     size="sm"
                     className={`${btnBg} text-white text-[12px] font-semibold ml-2 whitespace-nowrap rounded-lg h-8 px-3 border-0`}
                   >
-                    Хяналт руу орох →
+                    Хяналт руу орох
                   </Button>
                 </Link>
               </div>

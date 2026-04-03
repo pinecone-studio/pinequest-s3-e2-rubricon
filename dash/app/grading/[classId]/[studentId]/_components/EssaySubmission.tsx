@@ -19,9 +19,9 @@ export const EssaySubmission = ({
   onNext,
 }: EssaySubmissionProps) => {
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white">
       <div className="flex-1 p-6 overflow-y-auto">
-        <div className="bg-white border border-gray-200 rounded-2xl p-5">
+        <div className="border border-gray-200 rounded-2xl p-5">
           <h3 className="text-sm font-semibold text-gray-800 mb-1">
             {essay.id}-р Асуулт
           </h3>
@@ -34,7 +34,7 @@ export const EssaySubmission = ({
               <span className="text-xs font-semibold text-gray-700">
                 Оюутны Хариулт
               </span>
-              <button className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-500 transition-colors">
+              <button className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#31A8E0] transition-colors">
                 <Pencil size={12} />
                 Тэмдэглэх
               </button>
@@ -50,7 +50,7 @@ export const EssaySubmission = ({
         <button
           onClick={onPrev}
           disabled={essayIndex === 0}
-          className="flex items-center gap-1.5 text-sm text-gray-800 font-medium hover:bg-gray-100  disabled:opacity-30 disabled:cursor-not-allowed transition border border-gray-200 py-1 px-2 rounded-md shadow-xs"
+          className="flex items-center gap-1.5 text-sm text-gray-800 font-medium hover:bg-white  disabled:opacity-30 disabled:cursor-not-allowed transition border border-gray-200 py-1 px-2 rounded-md shadow-xs"
         >
           <ChevronLeft size={16} />
           Өмнөх Эссе
@@ -63,7 +63,7 @@ export const EssaySubmission = ({
         <button
           onClick={onNext}
           disabled={essayIndex === totalEssays - 1}
-          className="flex items-center gap-1.5 text-sm text-gray-800 font-medium hover:bg-gray-100  disabled:opacity-30 disabled:cursor-not-allowed transition border border-gray-200 py-1 px-2 rounded-md shadow-xs"
+          className="flex items-center gap-1.5 text-sm text-gray-800 font-medium hover:bg-white  disabled:opacity-30 disabled:cursor-not-allowed transition border border-gray-200 py-1 px-2 rounded-md shadow-xs"
         >
           Дараах Эссе
           <ChevronRight size={16} />

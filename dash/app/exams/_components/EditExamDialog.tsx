@@ -320,7 +320,7 @@ export const EditExamDialog = ({
             size="sm"
             onClick={() => void handleUpdate()}
             disabled={saving || uploading}
-            className="bg-blue-600 hover:bg-blue-700 text-white min-w-[90px]"
+            className="bg-blue-600 hover:bg-blue-700 text-white min-w-22.5"
           >
             {saving ? (
               <>

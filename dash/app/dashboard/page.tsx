@@ -14,7 +14,7 @@ export default function DashboardPage() {
           <ActiveExams />
         </div>
         {/* ── Right Column ── */}
-        <div className="flex flex-col gap-5 w-[280px] shrink-0">
+        <div className="flex flex-col gap-5 w-[380px] shrink-0">
           <UpcomingExams />
         </div>
       </div>

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   BadgePercent,
@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -61,6 +62,8 @@ type PracticeSetupProps = {
   historyItems: PracticeHistoryEntry[];
   historyLoading: boolean;
   onStartPractice: () => void;
+  contentClassName?: string;
+  sideContent?: ReactNode;
 };
 
 const isSameDay = (left: Date, right: Date) =>
@@ -98,16 +101,24 @@ export default function PracticeSetup({
   historyItems,
   historyLoading,
   onStartPractice,
+  contentClassName,
+  sideContent,
 }: PracticeSetupProps) {
   const [referenceNow] = useState(() => new Date());
   const [isWarningOpen, setIsWarningOpen] = useState(false);
-  const allTopics = Array.from(
-    new Set(
-      exams.flatMap((exam) =>
-        [exam.courseName, exam.courseCode, exam.title].filter(Boolean),
-      ),
-    ),
-  );
+  const startOfToday = new Date(referenceNow);
+  startOfToday.setHours(0, 0, 0, 0);
+  const upcomingExams = exams.filter((exam) => {
+    if (!exam.startTime) {
+      return false;
+    }
+
+    const examTime = new Date(exam.startTime).getTime();
+
+    return Number.isFinite(examTime)
+      ? examTime >= startOfToday.getTime()
+      : false;
+  });
   const selectedExamDetails = exams.find((exam) => exam.id === selectedExam);
   const todayHistory = historyItems.filter((item) =>
     isSameDay(new Date(item.submittedAt), referenceNow),
@@ -144,7 +155,7 @@ export default function PracticeSetup({
   );
   const canStartPractice =
     !isGenerating &&
-    (practiceMode === "exam" ? !!selectedExam : !!selectedTopic);
+    (practiceMode === "exam" ? !!selectedExam : !!selectedTopic?.trim());
 
   const handleOpenWarning = () => {
     if (!canStartPractice) return;
@@ -158,197 +169,272 @@ export default function PracticeSetup({
 
   return (
     <>
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card
-          className={`cursor-pointer transition-all ${
-            practiceMode === "exam"
-              ? "border-primary ring-1 ring-[#006d77]"
-              : "hover:border-primary/50"
-          }`}
-          onClick={() => setPracticeMode("exam")}
-        >
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#e6f4f1]">
-                <LibraryBig className="h-5 w-5 text-[#006d77]" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">Шалгалтаар бэлдэх</CardTitle>
-                <CardDescription>
-                  Тухайн шалгалтаас асуулт үүсгэх
-                </CardDescription>
-              </div>
-            </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="gap-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1">
+            <CardTitle className="text-sm font-medium">Өнөөдрийн явц</CardTitle>
+            <ChartColumn className="h-4 w-4 text-[#006d77]" strokeWidth={2} />
           </CardHeader>
+          <CardContent>
+            {historyLoading ? (
+              <div className="space-y-2">
+                <div className="h-7 w-12 animate-pulse rounded bg-slate-200" />
+                <div className="h-3 w-28 animate-pulse rounded bg-slate-200" />
+              </div>
+            ) : (
+              <>
+                <div className="text-xl font-semibold">{answeredToday}</div>
+                <p className="text-xs text-muted-foreground">
+                  асуултанд хариулсан
+                </p>
+              </>
+            )}
+          </CardContent>
         </Card>
-
-        <Card
-          className={`cursor-pointer transition-all ${
-            practiceMode === "topic"
-              ? "border-primary ring-1 ring-[#006d77]"
-              : "hover:border-primary/50"
-          }`}
-          onClick={() => setPracticeMode("topic")}
-        >
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#e6f4f1]">
-                <NotebookText className="h-5 w-5 text-[#006d77]" />
-              </div>
-              <div>
-                <CardTitle className="text-lg">Сэдвээр бэлдэх</CardTitle>
-                <CardDescription>
-                  Сайжруулахыг хүссэн сэдэв дээр төвлөрөх
-                </CardDescription>
-              </div>
-            </div>
+        <Card className="gap-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1">
+            <CardTitle className="text-sm font-medium">
+              Зөв хариултын дундаж
+            </CardTitle>
+            <BadgePercent className="h-4 w-4 text-[#006d77]" strokeWidth={2} />
           </CardHeader>
+          <CardContent>
+            {historyLoading ? (
+              <div className="space-y-2">
+                <div className="h-7 w-16 animate-pulse rounded bg-slate-200" />
+                <div className="h-1.5 w-full animate-pulse rounded bg-slate-200" />
+              </div>
+            ) : (
+              <>
+                {/* <div className="text-2xl font-bold">{averageAccuracy}%</div>
+                <Progress value={averageAccuracy} className="mt-2 h-1.5 " /> */}
+                <div className="text-xl font-semibold ">{averageAccuracy}%</div>
+                <Progress
+                  value={averageAccuracy}
+                  className="mt-2 h-1.5 **:data-[slot=progress-indicator]:bg-[#006d77] **:data-[slot=progress-indicator]:rounded-full"
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
+        <Card className="gap-0">
+          <CardHeader className="flex flex-row items-center justify-between pb-1">
+            <CardTitle className="text-sm font-medium">
+              Зарцуулсан хугацаа
+            </CardTitle>
+            <Clock className="h-4 w-4 text-[#006d77]" strokeWidth={2} />
+          </CardHeader>
+          <CardContent>
+            {historyLoading ? (
+              <div className="space-y-2">
+                <div className="h-7 w-16 animate-pulse rounded bg-slate-200" />
+                <div className="h-3 w-24 animate-pulse rounded bg-slate-200" />
+              </div>
+            ) : (
+              <>
+                <div className="text-xl font-semibold">
+                  {formatDurationLabel(spentSecondsThisWeek)}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Энэ долоо хоногт
+                </p>
+              </>
+            )}
+          </CardContent>
         </Card>
       </div>
+      <div className={contentClassName}>
+        <div className="space-y-6 py-4">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card
+              className={`py-2 cursor-pointer transition-all ${
+                practiceMode === "exam"
+                  ? "border-primary ring-1 ring-[#006d77]"
+                  : "hover:border-primary/50"
+              }`}
+              onClick={() => setPracticeMode("exam")}
+            >
+              <CardHeader>
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#e6f4f1]">
+                    <LibraryBig className="h-5 w-5 text-[#006d77]" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">
+                      Шалгалтаар бэлдэх
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Тухайн шалгалтаас асуулт үүсгэх
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {/* <Sparkles className="h-5 w-5 text-primary" /> */}
-            Тохиргоо
-          </CardTitle>
-          <CardDescription>
-            Давтах шалгалтаа сонгон AI-аар асуултууд үүсгээрэй
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {practiceMode === "exam" ? (
-            <div className="space-y-2">
-              <Label>Ойрын шалгалтыг сонгох</Label>
-              <Select
-                value={selectedExam || ""}
-                onValueChange={setSelectedExam}
-                disabled={examsLoading || exams.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      examsLoading
-                        ? "Шалгалтуудыг ачаалж байна..."
-                        : "Давтлага хийх шалгалтаа сонгоно уу"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {exams.map((exam) => (
-                    <SelectItem key={exam.id} value={exam.id}>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          {exam.courseCode || exam.courseName}
+            <Card
+              className={`py-2 cursor-pointer transition-all ${
+                practiceMode === "topic"
+                  ? "border-primary ring-1 ring-[#006d77]"
+                  : "hover:border-primary/50"
+              }`}
+              onClick={() => setPracticeMode("topic")}
+            >
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#e6f4f1]">
+                    <NotebookText className="h-5 w-5 text-[#006d77]" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Сэдвээр бэлдэх</CardTitle>
+                    <CardDescription className="text-xs">
+                      Сайжруулахыг хүссэн сэдэв дээр төвлөрөх
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </div>
+
+          <Card className=" flex flex-col  justify-between">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {/* <Sparkles className="h-5 w-5 text-primary" /> */}
+                Тохиргоо
+              </CardTitle>
+              <CardDescription>
+                Давтах шалгалтаа сонгон AI-аар асуултууд үүсгээрэй
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {practiceMode === "exam" ? (
+                <div className="space-y-2">
+                  <Label>Ойрын шалгалтыг сонгох</Label>
+                  <Select
+                    value={selectedExam || ""}
+                    onValueChange={setSelectedExam}
+                    disabled={examsLoading || upcomingExams.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          examsLoading
+                            ? "Шалгалтуудыг ачаалж байна..."
+                            : upcomingExams.length > 0
+                              ? "Давтлага хийх шалгалтаа сонгоно уу"
+                              : "Өнөөдөр болон цаашдын шалгалт алга"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {upcomingExams.map((exam) => (
+                        <SelectItem key={exam.id} value={exam.id}>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {exam.courseCode || exam.courseName}
+                            </Badge>
+                            <span>{exam.title}</span>
+                            {exam.startTime ? (
+                              <>
+                                <span className="text-muted-foreground">-</span>
+                                <span className="text-muted-foreground">
+                                  {new Date(exam.startTime).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      month: "short",
+                                      day: "numeric",
+                                    },
+                                  )}
+                                </span>
+                              </>
+                            ) : null}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {examsError ? (
+                    <p className="text-sm text-red-600">{examsError}</p>
+                  ) : null}
+                  {selectedExam && (
+                    <div className="mt-4 rounded-lg bg-secondary/50 p-4">
+                      <h4 className="mb-2 font-medium">Сонгосон шалгалт:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge
+                          variant="secondary"
+                          className="bg-[#e6f4f1] text-[#006d77]"
+                        >
+                          {selectedExamDetails?.courseCode ||
+                            selectedExamDetails?.courseName}
                         </Badge>
-                        <span>{exam.title}</span>
-                        {exam.startTime ? (
-                          <>
-                            <span className="text-muted-foreground">-</span>
-                            <span className="text-muted-foreground">
-                              {new Date(exam.startTime).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                },
-                              )}
-                            </span>
-                          </>
+                        {selectedExamDetails?.startTime ? (
+                          <Badge
+                            variant="secondary"
+                            className="bg-[#e6f4f1] text-[#006d77]"
+                          >
+                            {new Date(
+                              selectedExamDetails.startTime,
+                            ).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </Badge>
                         ) : null}
                       </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {examsError ? (
-                <p className="text-sm text-red-600">{examsError}</p>
-              ) : null}
-              {selectedExam && (
-                <div className="mt-4 rounded-lg bg-secondary/50 p-4">
-                  <h4 className="mb-2 font-medium">Сонгосон шалгалт:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge
-                      variant="secondary"
-                      className="bg-[#e6f4f1] text-[#006d77]"
-                    >
-                      {selectedExamDetails?.courseCode ||
-                        selectedExamDetails?.courseName}
-                    </Badge>
-                    {selectedExamDetails?.startTime ? (
-                      <Badge
-                        variant="secondary"
-                        className="bg-[#e6f4f1] text-[#006d77]"
-                      >
-                        {new Date(
-                          selectedExamDetails.startTime,
-                        ).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </Badge>
-                    ) : null}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Сэдэв сонгох</Label>
+                    <Input
+                      value={selectedTopic || ""}
+                      onChange={(event) => setSelectedTopic(event.target.value)}
+                      placeholder="Давтлага хийх сэдвээ бичнэ үү"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Түвшин</Label>
+                    <Select value={difficulty} onValueChange={setDifficulty}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="easy">Хялбар</SelectItem>
+                        <SelectItem value="medium">Дунд</SelectItem>
+                        <SelectItem value="hard">Хүнд</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Сэдэв сонгох</Label>
-                <Select
-                  value={selectedTopic || ""}
-                  onValueChange={setSelectedTopic}
+              <div className="flex justify-end">
+                <Button
+                  className=" bg-[#006d77] transition-colors duration-200 hover:cursor-pointer hover:bg-[#086068]"
+                  size="default"
+                  onClick={handleOpenWarning}
+                  disabled={!canStartPractice}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Давтлага хийх сэдвээ сонгоно уу" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allTopics.map((topic) => (
-                      <SelectItem key={topic} value={topic}>
-                        {topic}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {isGenerating ? (
+                    <>
+                      {/* <Zap className="mr-2 h-4 w-4 animate-pulse" /> */}
+                      Асуулт үүсгэж байна...
+                    </>
+                  ) : (
+                    <>
+                      {/* <Sparkles className="mr-2 h-4 w-4" /> */}
+                      Асуулт үүсгэх
+                    </>
+                  )}
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Түвшин</Label>
-                <Select value={difficulty} onValueChange={setDifficulty}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="easy">Хялбар</SelectItem>
-                    <SelectItem value="medium">Дунд</SelectItem>
-                    <SelectItem value="hard">Хүнд</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
+            </CardContent>
+          </Card>
+        </div>
 
-          <Button
-            className="w-full bg-[#006d77] hover:bg-[#086068] transition-colors duration-200 hover:cursor-pointer"
-            size="lg"
-            onClick={handleOpenWarning}
-            disabled={!canStartPractice}
-          >
-            {isGenerating ? (
-              <>
-                {/* <Zap className="mr-2 h-4 w-4 animate-pulse" /> */}
-                Асуулт үүсгэж байна...
-              </>
-            ) : (
-              <>
-                {/* <Sparkles className="mr-2 h-4 w-4" /> */}
-                Асуулт үүсгэх
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+        {sideContent}
+      </div>
 
       <Dialog open={isWarningOpen} onOpenChange={setIsWarningOpen}>
         <DialogContent className="p-0 sm:max-w-xl" showCloseButton={false}>
@@ -447,11 +533,12 @@ export default function PracticeSetup({
             </div>
           </div>
 
-          <DialogFooter className="-mx-0 -mb-0 rounded-b-none border-t-0 bg-transparent px-6 pb-5 pt-0">
+          <DialogFooter className="mx-0 mb-0 rounded-b-none border-t-0 bg-transparent px-6 pb-5 pt-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsWarningOpen(false)}
+              size="default"
             >
               Буцах
             </Button>
@@ -459,91 +546,13 @@ export default function PracticeSetup({
               type="button"
               onClick={handleConfirmStartPractice}
               className="bg-[#006d77]"
+              size="default"
             >
               Асуулт үүсгэх
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Өнөөдрийн явц</CardTitle>
-            <ChartColumn className="h-4 w-4 text-[#006d77]" strokeWidth={2} />
-          </CardHeader>
-          <CardContent>
-            {historyLoading ? (
-              <div className="space-y-2">
-                <div className="h-8 w-12 animate-pulse rounded bg-slate-200" />
-                <div className="h-3 w-28 animate-pulse rounded bg-slate-200" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-semibold">
-                  {todayHistory.length}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {answeredToday} асуултанд хариулсан
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Зөв хариултын дундаж
-            </CardTitle>
-            <BadgePercent className="h-4 w-4 text-[#006d77]" strokeWidth={2} />
-          </CardHeader>
-          <CardContent>
-            {historyLoading ? (
-              <div className="space-y-2">
-                <div className="h-8 w-16 animate-pulse rounded bg-slate-200" />
-                <div className="h-1.5 w-full animate-pulse rounded bg-slate-200" />
-              </div>
-            ) : (
-              <>
-                {/* <div className="text-2xl font-bold">{averageAccuracy}%</div>
-                <Progress value={averageAccuracy} className="mt-2 h-1.5 " /> */}
-                <div className="text-2xl font-semibold ">
-                  {averageAccuracy}%
-                </div>
-                <Progress
-                  value={averageAccuracy}
-                  className="mt-2 h-1.5 **:data-[slot=progress-indicator]:bg-[#006d77] **:data-[slot=progress-indicator]:rounded-full"
-                />
-              </>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Зарцуулсан хугацаа
-            </CardTitle>
-            <Clock className="h-4 w-4 text-[#006d77]" strokeWidth={2} />
-          </CardHeader>
-          <CardContent>
-            {historyLoading ? (
-              <div className="space-y-2">
-                <div className="h-8 w-16 animate-pulse rounded bg-slate-200" />
-                <div className="h-3 w-24 animate-pulse rounded bg-slate-200" />
-              </div>
-            ) : (
-              <>
-                <div className="text-2xl font-semibold">
-                  {formatDurationLabel(spentSecondsThisWeek)}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Энэ долоо хоногт
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </>
   );
 }

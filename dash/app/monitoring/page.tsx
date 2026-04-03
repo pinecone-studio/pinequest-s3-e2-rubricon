@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Monitor, Wifi } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,6 +47,8 @@ const MONITORING_QUERY = `#graphql
       id
       title
       course_id
+      start_time
+      end_time
       questions {
         id
       }
@@ -93,6 +96,8 @@ type MonitoringQueryData = {
     id: string;
     title: string | null;
     course_id: string | null;
+    start_time: string | null;
+    end_time: string | null;
     questions: Array<{ id: string }> | null;
   }> | null;
   submissions: Array<{
@@ -123,6 +128,16 @@ const getTimestamp = (value: string | null | undefined) => {
   return Number.isFinite(ts) ? ts : 0;
 };
 
+function isExamActiveNow(exam: {
+  start_time: string | null;
+  end_time: string | null;
+}, nowMs: number) {
+  const start = getTimestamp(exam.start_time);
+  const end = getTimestamp(exam.end_time);
+  if (!start || !end) return false;
+  return nowMs >= start && nowMs <= end;
+}
+
 function toStudentAlertType(
   type: string | null | undefined,
 ): StudentAlert["type"] {
@@ -146,9 +161,17 @@ function formatClassName(course?: {
 }
 
 export default function MonitoringPage() {
+  const params = useParams<{ examId?: string | string[] }>();
+  const routeExamId = Array.isArray(params?.examId)
+    ? params.examId[0]
+    : params?.examId;
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
+  const [activeRoomIds, setActiveRoomIds] = useState<string[]>([]);
+  const [roomByStudentId, setRoomByStudentId] = useState<Record<string, string>>(
+    {},
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [studentFilter, setStudentFilter] = useState<StudentFilter>("all");
   const [classFilter, setClassFilter] = useState("all");
@@ -170,13 +193,51 @@ export default function MonitoringPage() {
         const enrollments = monitoringData.enrollments ?? [];
         const courses = monitoringData.courses ?? [];
         const exams = monitoringData.exams ?? [];
-        const submissions = monitoringData.submissions ?? [];
-        const cheatLogs = monitoringData.cheatLogs ?? [];
+        const allSubmissions = monitoringData.submissions ?? [];
+        const allCheatLogs = monitoringData.cheatLogs ?? [];
+
+        const nowMs = Date.now();
+        const scopedExamIds = routeExamId
+          ? new Set([routeExamId])
+          : new Set(
+              exams
+                .filter((exam) => isExamActiveNow(exam, nowMs))
+                .map((exam) => exam.id),
+            );
+
+        const scopedSubmissions = allSubmissions.filter(
+          (submission) => scopedExamIds.has(submission.exam_id),
+        );
+        const inProgressSubmissions = scopedSubmissions.filter(
+          (submission) => submission.status === "in_progress",
+        );
+        const submissions = scopedSubmissions;
+
+        const examById = new Map(exams.map((exam) => [exam.id, exam]));
+        const scopedCourseIds = new Set(
+          Array.from(scopedExamIds)
+            .map((examId) => examById.get(examId)?.course_id ?? null)
+            .filter((courseId): courseId is string => Boolean(courseId)),
+        );
+
+        const liveStudentIds = new Set<string>();
+        for (const enrollment of enrollments) {
+          if (scopedCourseIds.has(enrollment.course_id)) {
+            liveStudentIds.add(enrollment.student_id);
+          }
+        }
+        for (const submission of inProgressSubmissions) {
+          liveStudentIds.add(submission.student_id);
+        }
+
+        const cheatLogs = (routeExamId
+          ? allCheatLogs.filter((log) => log.exam_id === routeExamId)
+          : allCheatLogs
+        ).filter((log) => Boolean(log.student_id && liveStudentIds.has(log.student_id)));
 
         const courseById = new Map(
           courses.map((course) => [course.id, course]),
         );
-        const examById = new Map(exams.map((exam) => [exam.id, exam]));
 
         const enrollmentsByStudentId = new Map<string, string[]>();
         for (const enrollment of enrollments) {
@@ -200,7 +261,12 @@ export default function MonitoringPage() {
           cheatLogsByStudentId.set(log.student_id, next);
         }
 
-        const nextStudents: Student[] = gqlStudents.map((student, index) => {
+        const baseStudents = gqlStudents.filter((student) =>
+          liveStudentIds.has(student.id),
+        );
+
+        const nextRoomByStudentId: Record<string, string> = {};
+        const nextStudents: Student[] = baseStudents.map((student, index) => {
           const studentSubmissions =
             submissionsByStudentId
               .get(student.id)
@@ -258,6 +324,13 @@ export default function MonitoringPage() {
               : latestSubmission?.status === "in_progress"
                 ? "online"
                 : "offline";
+          const normalizedStudentId = String(
+            Number.parseInt(student.id, 10) || index + 1,
+          );
+          if (latestSubmission?.exam_id) {
+            nextRoomByStudentId[normalizedStudentId] =
+              `exam-room-${latestSubmission.exam_id}`;
+          }
 
           return {
             id: Number.parseInt(student.id, 10) || index + 1,
@@ -274,6 +347,10 @@ export default function MonitoringPage() {
 
         if (!cancelled) {
           setStudents(nextStudents);
+          setRoomByStudentId(nextRoomByStudentId);
+          setActiveRoomIds(
+            Array.from(scopedExamIds).map((examId) => `exam-room-${examId}`),
+          );
           setIsLoading(false);
         }
       } catch (error) {
@@ -284,6 +361,8 @@ export default function MonitoringPage() {
             : "Monitoring data ачаалж чадсангүй",
         );
         setStudents([]);
+        setActiveRoomIds([]);
+        setRoomByStudentId({});
         setIsLoading(false);
       }
     };
@@ -297,7 +376,7 @@ export default function MonitoringPage() {
       cancelled = true;
       if (intervalId) clearInterval(intervalId);
     };
-  }, []);
+  }, [routeExamId]);
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -353,6 +432,25 @@ export default function MonitoringPage() {
     };
   }, [classFilteredStudents]);
 
+  const classFilteredRoomIds = useMemo(() => {
+    const scopedStudents =
+      classFilter === "all" ? students : classFilteredStudents;
+    return Array.from(
+      new Set(
+        scopedStudents
+          .map((student) => roomByStudentId[String(student.id)])
+          .filter((roomId): roomId is string => Boolean(roomId)),
+      ),
+    );
+  }, [classFilter, classFilteredStudents, roomByStudentId, students]);
+
+  const panelRoomIds = useMemo(() => {
+    if (routeExamId) {
+      return [`exam-room-${routeExamId}`];
+    }
+    return classFilter === "all" ? activeRoomIds : classFilteredRoomIds;
+  }, [activeRoomIds, classFilter, classFilteredRoomIds, routeExamId]);
+
   if (isLoading) {
     return <MonitoringPageSkeleton />;
   }
@@ -370,7 +468,7 @@ export default function MonitoringPage() {
             Monitoring data ачаалж чадсангүй: {loadError}
           </div>
         ) : null}
-        <LiveMonitorPanel roomId="exam-room-1" />
+        <LiveMonitorPanel roomIds={panelRoomIds} />
         <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4 p-0">
           <StatCard
             title="Нийт сурагч"
@@ -411,6 +509,11 @@ export default function MonitoringPage() {
                 <p className="mt-1 text-sm text-[var(--monitoring-muted)]">
                   Нийт {visibleStudents.length} сурагчийн илэрц
                 </p>
+                {routeExamId ? (
+                  <p className="mt-1 text-xs text-[var(--monitoring-primary)]">
+                    Шалгалтын хяналт: {routeExamId}
+                  </p>
+                ) : null}
               </div>
 
               <MonitoringFilters

@@ -1,7 +1,8 @@
 import { Separator } from "@/components/ui/separator";
 import { ClassCourse } from "@/lib/grading/types";
-import { CircleCheckBig, FileText, Users } from "lucide-react";
+import { CircleCheckBig, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 
 type ExamCardProps = {
   course: ClassCourse;
@@ -9,39 +10,44 @@ type ExamCardProps = {
 
 export const ExamCard = ({ course }: ExamCardProps) => {
   const router = useRouter();
+  if (!course || (course.total ?? 0) <= 0) return null;
+
   const progress = Math.round((course.graded / course.total) * 100);
   const isComplete = course.pending === 0;
 
   return (
     <div
-      className="relative bg-white border border-gray-200 rounded-2xl p-5 cursor-pointer hover:shadow-sm hover:border-blue-300 transition-all duration-200 flex flex-col gap-3"
+      className="relative bg-white border border-gray-200 rounded-2xl p-5 cursor-pointer hover:shadow-sm hover:border-[#31A8E0]/50 transition-all duration-200 flex flex-col gap-3"
       onClick={() => router.push(`/grading/${course.id}`)}
     >
-      {course.pending > 0 && (
-        <span className="absolute top-4 right-4 text-xs font-medium text-red-700 bg-red-50 border-red-100 px-2.5 py-1 rounded-full">
-          {course.pending} хүлээгдэж байна
-        </span>
-      )}
+      <div className="flex items-center justify-between gap-2">
+        {course.assignmentLabel ? (
+          <div className="group relative inline-flex max-w-[100px]">
+            <Badge
+              variant="outline"
+              className="inline-block max-w-[100px] truncate text-xs py-0.5"
+            >
+              {course.assignmentLabel}
+            </Badge>
+            <div className="pointer-events-none absolute left-1/2 top-full z-30 mt-1 w-max max-w-[240px] -translate-x-1/2 rounded-md bg-gray-900 px-2 py-1 text-[11px] text-white opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100">
+              {course.assignmentLabel}
+            </div>
+          </div>
+        ) : (
+          <div className="h-6" />
+        )}
 
-      <div className="rounded-lg h-10 w-10 bg-blue-50 flex items-center justify-center text-blue-500">
-        <FileText size={20} />
+        {course.pending > 0 && (
+          <span className="inline-flex items-center text-[11px] leading-none font-medium text-[#C27A17] bg-[#FFF7E8] border border-[#F5D8A8] px-2 py-1 rounded-full">
+            {course.pending} хүлээгдэж байна
+          </span>
+        )}
       </div>
-
       <div>
         <h3 className="text-base font-bold text-gray-900">{course.code}</h3>
         <p className="text-sm text-gray-500 mt-0.5">{course.name}</p>
       </div>
-
-      {course.assignmentLabel ? (
-        <span className="self-start text-xs border border-gray-200 rounded-sm px-3 py-1 text-gray-600">
-          {course.assignmentLabel}
-        </span>
-      ) : (
-        <div className="h-6.75"></div>
-      )}
-
       <Separator />
-
       <div>
         <div className="flex justify-between text-sm mb-1.5">
           <span className="text-gray-500">Дүгнэлтийн явц</span>
@@ -52,20 +58,19 @@ export const ExamCard = ({ course }: ExamCardProps) => {
 
         <div className="w-full bg-gray-100 rounded-full h-2">
           <div
-            className="bg-blue-500 h-2 rounded-full transition-all"
+            className="bg-[#31A8E0] h-2 rounded-full transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
-
       <div className="flex items-center justify-between gap-1.5 text-sm text-gray-500">
         <div className="flex items-center gap-1.5">
           <Users size={14} /> {course.total} оюутан
         </div>
         {isComplete && (
           <div className="flex items-center gap-1.5">
-            <CircleCheckBig size={16} color="#00a63e" strokeWidth={2.5} />
-            <span className="ml-1 text-green-600 font-medium">Дууссан</span>
+            <CircleCheckBig size={16} color="#1F9D8B" strokeWidth={2.5} />
+            <span className="ml-1 text-[#1F9D8B] font-medium">Дууссан</span>
           </div>
         )}
       </div>

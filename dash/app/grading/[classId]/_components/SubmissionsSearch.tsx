@@ -41,7 +41,7 @@ export const SubmissionsSearch = ({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Оюутан хайх..."
-          className="w-full pl-9 pr-4 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-0 bg-white"
+          className="w-full pl-9 pr-4 py-2 text-xl border border-gray-200 rounded-lg focus:outline-none focus:ring-0 bg-white"
         />
       </div>
 
@@ -52,7 +52,7 @@ export const SubmissionsSearch = ({
             onClick={() => onFilterChange(tab)}
             className={`text-xs px-4 py-2 rounded-xl border font-medium transition-all ${
               activeFilter === tab
-                ? "bg-blue-500 text-white border-blue-500"
+                ? "bg-[#31A8E0] text-white border-[#31A8E0]"
                 : "bg-white text-gray-600 border-gray-200 "
             }`}
           >

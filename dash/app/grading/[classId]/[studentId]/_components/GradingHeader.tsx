@@ -38,7 +38,7 @@ export const GradingHeader = ({
       <div className="flex items-center gap-2 text-sm text-gray-500">
         <CircleCheckBig
           size={16}
-          className="text-green-600"
+          className="text-[#1F9D8B]"
           strokeWidth={2.5}
         />
         <span>

@@ -16,7 +16,7 @@ export const StudentInfoHeader = ({
   return (
     <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold">
+        <div className="w-10 h-10 rounded-full bg-[#31A8E0]/10 text-[#31A8E0] flex items-center justify-center text-sm font-bold">
           {student.initials}
         </div>
         <div>

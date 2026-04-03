@@ -21,7 +21,9 @@ io.on("connection", (socket) => {
 
   socket.on("join-room", ({ roomId, role }) => {
     socket.join(roomId);
-    socket.data.roomId = roomId;
+    const joinedRooms = socket.data.joinedRooms ?? new Set();
+    joinedRooms.add(roomId);
+    socket.data.joinedRooms = joinedRooms;
     socket.data.role = role;
 
     console.log(`${role} joined ${roomId}`);
@@ -29,6 +31,7 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("peer-joined", {
       socketId: socket.id,
       role,
+      roomId,
     });
   });
 
@@ -39,6 +42,7 @@ io.on("connection", (socket) => {
       event: "request-offer",
       payload: {
         from: socket.id,
+        roomId,
       },
     });
   });
@@ -51,6 +55,7 @@ io.on("connection", (socket) => {
       payload: {
         sdp,
         from: socket.id,
+        roomId,
       },
     });
   });
@@ -63,6 +68,7 @@ io.on("connection", (socket) => {
       payload: {
         sdp,
         from: socket.id,
+        roomId,
       },
     });
   });
@@ -75,16 +81,27 @@ io.on("connection", (socket) => {
       payload: {
         candidate,
         from: socket.id,
+        roomId,
       },
     });
   });
 
   socket.on("disconnect", () => {
-    const roomId = socket.data.roomId;
-    if (roomId) {
+    const joinedRooms = socket.data.joinedRooms;
+    if (joinedRooms && joinedRooms.size > 0) {
+      for (const roomId of joinedRooms) {
+        socket.to(roomId).emit("peer-left", {
+          socketId: socket.id,
+          role: socket.data.role,
+          roomId,
+        });
+      }
+    } else if (socket.data.roomId) {
+      const roomId = socket.data.roomId;
       socket.to(roomId).emit("peer-left", {
         socketId: socket.id,
         role: socket.data.role,
+        roomId,
       });
     }
     console.log("disconnected:", socket.id);
