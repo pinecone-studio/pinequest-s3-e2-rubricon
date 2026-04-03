@@ -19,7 +19,10 @@ type StudentTile = {
   stream: MediaStream | null;
   connectionState: ConnectionStateLabel;
   debug: string;
-  latestWarning?: LiveWarning;
+  warningCount: number;
+  latestWarningSeverity?: WarningSeverity;
+  studentId?: string;
+  studentName?: string;
 };
 
 type PeerConnectionEntry = {
@@ -53,9 +56,20 @@ type PeerLeftPayload = {
 
 type LiveMonitorPanelProps = {
   roomIds?: string[];
+  onLiveStudentsChange?: (students: LiveStudentSnapshot[]) => void;
 };
 
 type WarningSeverity = "warning" | "danger";
+export type LiveStudentSnapshot = {
+  peerId: string;
+  studentId?: string;
+  studentName?: string;
+  roomId: string;
+  connectionState: ConnectionStateLabel;
+  warningCount: number;
+  latestWarningSeverity?: WarningSeverity;
+  isStreaming: boolean;
+};
 
 type LiveWarningPayload = {
   roomId?: string;
@@ -69,16 +83,6 @@ type LiveWarningPayload = {
   severity?: WarningSeverity | string | number;
   createdAt?: string;
   timestamp?: string | number;
-};
-
-type LiveWarning = {
-  id: string;
-  peerId: string;
-  roomId: string;
-  message: string;
-  severity: WarningSeverity;
-  typeLabel: string;
-  createdAt: string;
 };
 
 const LIVE_WARNING_EVENTS = [
@@ -99,35 +103,6 @@ const toWarningSeverity = (
   return normalized.includes("danger") || normalized.includes("high")
     ? "danger"
     : "warning";
-};
-
-const toWarningTypeLabel = (payload: LiveWarningPayload) => {
-  const rawType = String(payload.type ?? payload.warningCode ?? "").replaceAll(
-    /[_-]+/g,
-    " ",
-  );
-  const normalized = rawType.trim();
-  return normalized ? normalized : "warning";
-};
-
-const toWarningMessage = (payload: LiveWarningPayload) => {
-  const message = payload.message?.trim();
-  if (message) return message;
-  return `Detected ${toWarningTypeLabel(payload)}`;
-};
-
-const toWarningTimestamp = (payload: LiveWarningPayload) => {
-  const raw = payload.createdAt ?? payload.timestamp;
-  if (typeof raw === "number") {
-    return new Date(raw).toISOString();
-  }
-  if (typeof raw === "string") {
-    const timestamp = new Date(raw).getTime();
-    if (Number.isFinite(timestamp)) {
-      return new Date(timestamp).toISOString();
-    }
-  }
-  return new Date().toISOString();
 };
 
 function StudentStreamTile({
@@ -162,7 +137,7 @@ function StudentStreamTile({
     void tryPlay();
   }, [tile?.stream]);
 
-  const title = `Student ${tile.peerId.slice(0, 6)}`;
+  const title = tile.studentName?.trim() || `Student ${tile.peerId.slice(0, 6)}`;
   const subtitle = `${tile.connectionState} - ${tile.roomId.replace("exam-room-", "")}`;
 
   return (
@@ -170,15 +145,15 @@ function StudentStreamTile({
       <div className="mb-2 flex items-center justify-between gap-2 text-xs">
         <p className="truncate font-medium text-white/90">{title}</p>
         <div className="flex items-center gap-2">
-          {tile.latestWarning ? (
+          {tile.warningCount > 0 ? (
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                tile.latestWarning.severity === "danger"
+                tile.latestWarningSeverity === "danger"
                   ? "bg-red-500/20 text-red-300"
                   : "bg-amber-500/20 text-amber-200"
               }`}
             >
-              {tile.latestWarning.typeLabel}
+              Warnings {tile.warningCount}
             </span>
           ) : null}
           <p
@@ -213,17 +188,13 @@ function StudentStreamTile({
       <p className="mt-2 truncate text-[11px] text-white/50">
         {tile.debug ?? "No signaling event yet"}
       </p>
-      {tile.latestWarning ? (
-        <p className="mt-1 truncate text-[11px] text-amber-200/90">
-          {tile.latestWarning.message}
-        </p>
-      ) : null}
     </div>
   );
 }
 
 export function LiveMonitorPanel({
   roomIds,
+  onLiveStudentsChange,
 }: LiveMonitorPanelProps) {
   const peersRef = useRef<Map<string, PeerConnectionEntry>>(new Map());
   const pendingIceRef = useRef<Map<string, RTCIceCandidateInit[]>>(new Map());
@@ -231,7 +202,6 @@ export function LiveMonitorPanel({
   const [tiles, setTiles] = useState<StudentTile[]>([]);
   const [status, setStatus] = useState("Waiting for students...");
   const [panelDebug, setPanelDebug] = useState("No signaling event yet");
-  const [recentWarnings, setRecentWarnings] = useState<LiveWarning[]>([]);
   const normalizedRoomIds = useMemo(() => {
     const raw = roomIds ?? [];
     return Array.from(new Set(raw.filter(Boolean)));
@@ -239,7 +209,6 @@ export function LiveMonitorPanel({
 
   useEffect(() => {
     setTiles([]);
-    setRecentWarnings([]);
 
     if (normalizedRoomIds.length === 0) {
       setStatus("No live exam rooms");
@@ -252,16 +221,23 @@ export function LiveMonitorPanel({
     const upsertTile = (
       peerId: string,
       fallbackRoomId: string,
-      patch: Partial<StudentTile>,
+      patch:
+        | Partial<StudentTile>
+        | ((current: StudentTile | undefined) => Partial<StudentTile>),
     ) => {
       setTiles((prev) => {
         const index = prev.findIndex((tile) => tile.peerId === peerId);
         if (index >= 0) {
           const next = [...prev];
-          next[index] = { ...next[index], ...patch };
+          const current = next[index];
+          const resolvedPatch =
+            typeof patch === "function" ? patch(current) : patch;
+          next[index] = { ...current, ...resolvedPatch };
           return next;
         }
 
+        const resolvedPatch =
+          typeof patch === "function" ? patch(undefined) : patch;
         return [
           ...prev,
           {
@@ -270,7 +246,8 @@ export function LiveMonitorPanel({
             stream: null,
             connectionState: "new",
             debug: "peer discovered",
-            ...patch,
+            warningCount: 0,
+            ...resolvedPatch,
           },
         ];
       });
@@ -368,22 +345,19 @@ export function LiveMonitorPanel({
         return;
       }
 
-      const warning: LiveWarning = {
-        id: `${peerId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        peerId,
-        roomId,
-        message: toWarningMessage(payload),
-        severity: toWarningSeverity(payload.severity),
-        typeLabel: toWarningTypeLabel(payload),
-        createdAt: toWarningTimestamp(payload),
-      };
+      const severity = toWarningSeverity(payload.severity);
 
-      upsertTile(peerId, roomId, {
-        latestWarning: warning,
-        debug: `warning: ${warning.typeLabel}`,
-      });
-      setRecentWarnings((prev) => [warning, ...prev].slice(0, 20));
-      setPanelDebug(`Live warning: ${warning.typeLabel}`);
+      upsertTile(peerId, roomId, (current) => ({
+        warningCount: (current?.warningCount ?? 0) + 1,
+        latestWarningSeverity: severity,
+        studentId:
+          payload.studentId !== undefined
+            ? String(payload.studentId)
+            : current?.studentId,
+        studentName: payload.studentName?.trim() || current?.studentName,
+        debug: "warning count increased",
+      }));
+      setPanelDebug(`Live warning received from ${peerId.slice(0, 6)}`);
     };
 
     const flushPendingIce = async (peerId: string) => {
@@ -528,6 +502,21 @@ export function LiveMonitorPanel({
     return [...tiles].sort((a, b) => a.roomId.localeCompare(b.roomId));
   }, [tiles]);
 
+  useEffect(() => {
+    onLiveStudentsChange?.(
+      tiles.map((tile) => ({
+        peerId: tile.peerId,
+        studentId: tile.studentId,
+        studentName: tile.studentName,
+        roomId: tile.roomId,
+        connectionState: tile.connectionState,
+        warningCount: tile.warningCount,
+        latestWarningSeverity: tile.latestWarningSeverity,
+        isStreaming: Boolean(tile.stream),
+      })),
+    );
+  }, [onLiveStudentsChange, tiles]);
+
   return (
     <Card className="rounded-2xl border-[var(--monitoring-dark-border)] bg-white shadow-sm">
       <CardContent className="p-6">
@@ -554,34 +543,6 @@ export function LiveMonitorPanel({
           </div>
         )}
 
-        {recentWarnings.length > 0 ? (
-          <div className="mt-4 rounded-xl border border-[var(--monitoring-dark-border)] bg-[var(--monitoring-primary-surface)] p-3">
-            <p className="mb-2 text-xs font-medium text-[var(--monitoring-muted)]">
-              Live warnings ({recentWarnings.length})
-            </p>
-            <div className="space-y-1">
-              {recentWarnings.slice(0, 8).map((warning) => (
-                <div
-                  key={warning.id}
-                  className="flex items-center justify-between gap-2 rounded-md bg-white px-2 py-1 text-xs"
-                >
-                  <p className="truncate text-[var(--monitoring-dark)]">
-                    {warning.message}
-                  </p>
-                  <p
-                    className={`shrink-0 font-medium ${
-                      warning.severity === "danger"
-                        ? "text-[var(--monitoring-warning)]"
-                        : "text-[var(--monitoring-primary)]"
-                    }`}
-                  >
-                    {warning.typeLabel}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </CardContent>
     </Card>
   );

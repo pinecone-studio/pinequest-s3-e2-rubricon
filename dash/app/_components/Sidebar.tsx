@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   ClerkLoaded,
@@ -27,11 +28,6 @@ const NAV_MAIN = [
   { href: "/students", label: "Оюутнууд", icon: Users },
 ];
 
-const NAV_REPORT = [
-  { href: "/performance", label: "Гүйцэтгэл", icon: TrendingUp },
-  { href: "/statistics", label: "Статистик", icon: BarChart3 },
-];
-
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useUser();
@@ -40,15 +36,17 @@ export function Sidebar() {
     <aside className="fixed left-0 top-0 h-screen w-[220px] shrink-0 bg-[linear-gradient(to_bottom,#24485F_0%,#296181_48%,#31A8E0_100%)] flex flex-col z-50">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 py-[22px] border-b border-white/[0.07]">
-        <div className="w-[34px] h-[34px] rounded-[9px] bg-[#31A8E0] flex items-center justify-center text-white font-bold text-base shrink-0">
-          L
+        <div className="w-[34px] h-[34px] shrink-0 flex items-center justify-center">
+          <Image
+            src="/logo/Polygon.svg"
+            alt="LMS Proctor Logo"
+            width={34}
+            height={34}
+          />
         </div>
         <div>
-          <p className="text-white text-[15px] font-semibold leading-tight">
-            LMS Proctor
-          </p>
-          <p className="text-[#8a9bb0] text-[10px] font-normal uppercase tracking-widest">
-            Teacher Portal
+          <p className="text-white text-[27px] font-semibold leading-tight">
+            Uniexam
           </p>
         </div>
       </div>
@@ -56,13 +54,6 @@ export function Sidebar() {
       {/* Nav main */}
       <NavSection label="Үндсэн цэс">
         {NAV_MAIN.map((item) => (
-          <NavItem key={item.href} {...item} active={pathname === item.href} />
-        ))}
-      </NavSection>
-
-      {/* Nav report */}
-      <NavSection label="Тайлан">
-        {NAV_REPORT.map((item) => (
           <NavItem key={item.href} {...item} active={pathname === item.href} />
         ))}
       </NavSection>

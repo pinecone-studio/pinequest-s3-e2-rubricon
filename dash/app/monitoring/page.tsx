@@ -5,23 +5,17 @@ import { useParams } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Monitor, Wifi } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { graphqlRequest } from "@/lib/graphql";
 
-import { StudentAlertDetail } from "./_components/StudentCard";
 import { MonitoringFilters } from "./_components/MonitoringFilters";
 import { MonitoringHeader } from "./_components/MonitoringHeader";
 import { MonitoringPageSkeleton } from "./_components/MonitoringPageSkeleton";
 import { StatCard } from "./_components/StatCard";
 import { monitoringCssVars } from "./_lib/theme";
-import { LiveMonitorPanel } from "./_components/LiveMonitorPanel";
+import {
+  LiveMonitorPanel,
+  type LiveStudentSnapshot,
+} from "./_components/LiveMonitorPanel";
 import type { Student, StudentAlert } from "./_lib/types";
 
 type StudentFilter = "all" | "alert";
@@ -183,6 +177,7 @@ export default function MonitoringPage() {
   const [studentFilter, setStudentFilter] = useState<StudentFilter>("all");
   const [classFilter, setClassFilter] = useState("all");
   const [classOptions, setClassOptions] = useState<ClassOption[]>([]);
+  const [liveStudents, setLiveStudents] = useState<LiveStudentSnapshot[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -442,35 +437,32 @@ export default function MonitoringPage() {
     );
   }, [classFilter, courseIdByStudentId, students]);
 
-  const visibleStudents = useMemo(() => {
-    return classFilteredStudents.filter((student) => {
-      const matchesSearch = student.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-
-      const matchesStudentFilter =
-        studentFilter === "all"
-          ? true
-          : student.tabSwitches > 0 || Boolean(student.latestAlert);
-
-      return matchesSearch && matchesStudentFilter;
-    });
-  }, [classFilteredStudents, searchTerm, studentFilter]);
+  const visibleLiveStudents = useMemo(() => {
+    return liveStudents
+      .filter((student) => {
+        const displayName = (
+          student.studentName?.trim() || `Student ${student.peerId.slice(0, 6)}`
+        ).toLowerCase();
+        const matchesSearch = displayName.includes(searchTerm.toLowerCase());
+        const matchesStudentFilter =
+          studentFilter === "all" ? true : student.warningCount > 0;
+        return matchesSearch && matchesStudentFilter;
+      })
+      .sort((a, b) => a.roomId.localeCompare(b.roomId));
+  }, [liveStudents, searchTerm, studentFilter]);
 
   const stats = useMemo(() => {
     return {
-      total: classFilteredStudents.length,
-      online: classFilteredStudents.filter(
-        (student) => student.status === "online",
+      total: liveStudents.length,
+      online: liveStudents.filter(
+        (student) =>
+          student.connectionState === "connected" ||
+          student.connectionState === "connecting",
       ).length,
-      submitted: classFilteredStudents.filter(
-        (student) => student.status === "submitted",
-      ).length,
-      alerts: classFilteredStudents.filter(
-        (student) => student.tabSwitches > 0 || Boolean(student.latestAlert),
-      ).length,
+      submitted: 0,
+      alerts: liveStudents.filter((student) => student.warningCount > 0).length,
     };
-  }, [classFilteredStudents]);
+  }, [liveStudents]);
 
   const classFilteredRoomIds = useMemo(() => {
     const scopedStudents =
@@ -539,7 +531,10 @@ export default function MonitoringPage() {
           />
         </div>
         
-        <LiveMonitorPanel roomIds={panelRoomIds} />
+        <LiveMonitorPanel
+          roomIds={panelRoomIds}
+          onLiveStudentsChange={setLiveStudents}
+        />
 
         <Card className="rounded-2xl border-[var(--monitoring-dark-border)] bg-white shadow-sm">
           <CardContent className="p-6">
@@ -549,7 +544,7 @@ export default function MonitoringPage() {
                   Сурагчдын явц
                 </h2>
                 <p className="mt-1 text-sm text-[var(--monitoring-muted)]">
-                  Нийт {visibleStudents.length} сурагчийн илэрц
+                  Нийт {visibleLiveStudents.length} live сурагч
                 </p>
                 {routeExamId ? (
                   <p className="mt-1 text-xs text-[var(--monitoring-primary)]">
@@ -566,7 +561,7 @@ export default function MonitoringPage() {
               />
             </div>
 
-            {visibleStudents.length === 0 ? (
+            {visibleLiveStudents.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-[var(--monitoring-dark-border)] bg-white p-10 text-center text-[var(--monitoring-muted)]">
                 Илэрц олдсонгүй.
               </div>
@@ -574,63 +569,55 @@ export default function MonitoringPage() {
               <div className="overflow-hidden rounded-2xl border border-[var(--monitoring-dark-border)] bg-white">
                 <div className="grid grid-cols-12 gap-3 border-b border-[var(--monitoring-dark-border)] bg-gray-50 px-4 py-3 text-xs font-semibold text-[var(--monitoring-muted)]">
                   <div className="col-span-3">Сурагч</div>
-                  <div className="col-span-3">Анги</div>
+                  <div className="col-span-3">Room</div>
                   <div className="col-span-2">Төлөв</div>
-                  <div className="col-span-3">Ахиц</div>
+                  <div className="col-span-3">Stream</div>
                   <div className="col-span-1 text-right">Зөрчил</div>
                 </div>
 
                 <div className="divide-y divide-[var(--monitoring-dark-border)]">
-                  {visibleStudents.map((student) => {
-                    const hasAlert =
-                      student.tabSwitches > 0 || Boolean(student.latestAlert);
+                  {visibleLiveStudents.map((student) => {
+                    const hasAlert = student.warningCount > 0;
                     const statusText =
-                      student.status === "online"
+                      student.connectionState === "connected"
                         ? "Онлайн"
-                        : student.status === "offline"
-                          ? "Офлайн"
-                          : "Илгээсэн";
+                        : student.connectionState === "connecting" ||
+                            student.connectionState === "new"
+                          ? "Холбогдож байна"
+                          : "Тасарсан";
 
-                    const progressPercent = Math.round(
-                      (student.currentQuestion / student.totalQuestions) * 100,
-                    );
-
-                    const rowContent = (
+                    return (
                       <div
+                        key={student.peerId}
                         className={`grid grid-cols-12 gap-3 px-4 py-3 text-sm ${
-                          hasAlert
-                            ? "bg-[var(--monitoring-warning-surface)]"
-                            : ""
-                        } ${hasAlert ? "cursor-pointer hover:bg-[var(--monitoring-warning-surface-strong)]" : ""}`}
+                          hasAlert ? "bg-[var(--monitoring-warning-surface)]" : ""
+                        }`}
                       >
                         <div className="col-span-3 min-w-0">
                           <p className="truncate font-semibold text-[var(--monitoring-dark)]">
-                            {student.name}
+                            {student.studentName?.trim() ||
+                              `Student ${student.peerId.slice(0, 6)}`}
                           </p>
                           <p className="truncate text-xs text-[var(--monitoring-muted)]">
-                            {student.email}
+                            peer: {student.peerId.slice(0, 12)}
                           </p>
-                          {student.latestAlert ? (
-                            <p className="truncate text-xs text-[var(--monitoring-warning)]">
-                              {student.latestAlert.message}
-                            </p>
-                          ) : null}
                         </div>
 
                         <div className="col-span-3 min-w-0">
                           <p className="truncate text-[var(--monitoring-dark)]">
-                            {student.className}
+                            {student.roomId}
                           </p>
                         </div>
 
                         <div className="col-span-2">
                           <span
                             className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                              student.status === "online"
+                              student.connectionState === "connected"
                                 ? "bg-blue-50 text-blue-600"
-                                : student.status === "offline"
-                                  ? "bg-gray-100 text-gray-600"
-                                  : "bg-[var(--monitoring-primary-soft)] text-[var(--monitoring-primary)]"
+                                : student.connectionState === "connecting" ||
+                                    student.connectionState === "new"
+                                  ? "bg-amber-50 text-amber-700"
+                                  : "bg-gray-100 text-gray-600"
                             }`}
                           >
                             {statusText}
@@ -638,17 +625,11 @@ export default function MonitoringPage() {
                         </div>
 
                         <div className="col-span-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 flex-1 rounded-full bg-gray-100">
-                              <div
-                                className="h-2 rounded-full bg-[var(--monitoring-primary)]"
-                                style={{ width: `${progressPercent}%` }}
-                              />
-                            </div>
-                            <span className="text-xs text-[var(--monitoring-muted)]">
-                              {student.currentQuestion}/{student.totalQuestions}
-                            </span>
-                          </div>
+                          <span className="text-xs text-[var(--monitoring-muted)]">
+                            {student.isStreaming
+                              ? "Camera stream ирж байна"
+                              : "Stream хүлээж байна"}
+                          </span>
                         </div>
 
                         <div className="col-span-1 text-right">
@@ -659,35 +640,10 @@ export default function MonitoringPage() {
                                 : "text-gray-400"
                             }`}
                           >
-                            {student.tabSwitches}
+                            {student.warningCount}
                           </span>
                         </div>
                       </div>
-                    );
-
-                    if (!hasAlert) {
-                      return <div key={student.id}>{rowContent}</div>;
-                    }
-
-                    return (
-                      <Dialog key={student.id}>
-                        <DialogTrigger asChild>
-                          <button type="button" className="w-full text-left">
-                            {rowContent}
-                          </button>
-                        </DialogTrigger>
-                        <DialogContent className="border-(--monitoring-dark-border) bg-white text-(--monitoring-dark) sm:max-w-md">
-                          <DialogHeader>
-                            <DialogTitle className="text-(--monitoring-dark)">
-                              Зөрчлийн мэдээлэл
-                            </DialogTitle>
-                            <DialogDescription className="text-(--monitoring-muted)">
-                              Сурагч дээр илэрсэн анхааруулгын дэлгэрэнгүй
-                            </DialogDescription>
-                          </DialogHeader>
-                          <StudentAlertDetail student={student} />
-                        </DialogContent>
-                      </Dialog>
                     );
                   })}
                 </div>
