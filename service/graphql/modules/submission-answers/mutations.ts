@@ -21,10 +21,24 @@ async function assertSubmissionWritable(submissionId: string) {
   if (subErr) throw new Error(subErr.message);
   if (!sub) throw new Error("Submission not found");
 
+  return sub;
+}
+
+async function assertSubmissionAnswerEditable(submissionId: string) {
+  const sub = await assertSubmissionWritable(submissionId);
+
   // Deadline enforcement happens when the submission is finalized so
   // answers are not dropped if the student submits at the exact cutoff.
   if (sub.status !== "in_progress") {
     throw new Error("Submission is not editable");
+  }
+}
+
+async function assertSubmissionGradeEditable(submissionId: string) {
+  const sub = await assertSubmissionWritable(submissionId);
+
+  if (sub.status !== "submitted" && sub.status !== "reviewed") {
+    throw new Error("Submission is not ready for grading");
   }
 }
 
@@ -33,7 +47,16 @@ export const submissionAnswerMutations = {
     _: unknown,
     args: CreateSubmissionAnswerArgs,
   ) => {
-    await assertSubmissionWritable(args.submission_id);
+    const isGradingPayload =
+      args.score !== undefined ||
+      args.feedback !== undefined ||
+      args.is_correct !== undefined;
+
+    if (isGradingPayload) {
+      await assertSubmissionGradeEditable(args.submission_id);
+    } else {
+      await assertSubmissionAnswerEditable(args.submission_id);
+    }
 
     const { data, error } = await supabase
       .from("submission_answers")
@@ -75,7 +98,16 @@ export const submissionAnswerMutations = {
       throw new Error("Submission ID is required");
     }
 
-    await assertSubmissionWritable(submissionId);
+    const isGradingPayload =
+      args.score !== undefined ||
+      args.feedback !== undefined ||
+      args.is_correct !== undefined;
+
+    if (isGradingPayload) {
+      await assertSubmissionGradeEditable(submissionId);
+    } else {
+      await assertSubmissionAnswerEditable(submissionId);
+    }
 
     const payload = pickDefined({
       submission_id: args.submission_id,
